@@ -19,6 +19,18 @@ describe("parseEnv", () => {
     ).toThrow("APP_ORIGIN");
   });
 
+  it.each([
+    "ftp://example.com",
+    "https://user:pass@example.com",
+    "https://example.com/path",
+    "https://example.com?preview=1",
+    "https://example.com#section",
+  ])("rejects a URL that is not an HTTP application origin: %s", (origin) => {
+    expect(() => parseEnv({ ...validEnv, APP_ORIGIN: origin })).toThrow(
+      "APP_ORIGIN",
+    );
+  });
+
   it("rejects a non-positive session duration", () => {
     expect(() =>
       parseEnv({ ...validEnv, SESSION_DAYS: "0" }),
