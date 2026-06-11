@@ -12,6 +12,12 @@ const packageJson = JSON.parse(
   devDependencies: Record<string, string>;
 };
 
+const tsconfig = JSON.parse(
+  readFileSync(resolve(process.cwd(), "tsconfig.json"), "utf8"),
+) as {
+  compilerOptions: { jsx: string };
+};
+
 describe("application scaffold configuration", () => {
   it("uses Corepack for the Playwright development server", () => {
     expect(playwrightConfig.webServer).toMatchObject({
@@ -27,5 +33,9 @@ describe("application scaffold configuration", () => {
 
   it("uses Node types matching the minimum supported runtime", () => {
     expect(packageJson.devDependencies["@types/node"]).toBe("^20.19.0");
+  });
+
+  it("uses the stable JSX runtime required by Next.js 16 builds", () => {
+    expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
   });
 });
