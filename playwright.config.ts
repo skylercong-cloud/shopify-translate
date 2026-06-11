@@ -8,7 +8,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "pnpm dev",
+    command: "corepack pnpm@10.12.4 dev",
     url: "http://127.0.0.1:3000/api/health/live",
     reuseExistingServer: true,
     timeout: 120_000,

@@ -1,0 +1,31 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { describe, expect, it } from "vitest";
+
+import playwrightConfig from "../../playwright.config";
+
+const packageJson = JSON.parse(
+  readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
+) as {
+  engines: { node: string };
+  devDependencies: Record<string, string>;
+};
+
+describe("application scaffold configuration", () => {
+  it("uses Corepack for the Playwright development server", () => {
+    expect(playwrightConfig.webServer).toMatchObject({
+      command: "corepack pnpm@10.12.4 dev",
+    });
+  });
+
+  it("advertises the Node versions supported by the locked test toolchain", () => {
+    expect(packageJson.engines.node).toBe(
+      "^20.19.0 || ^22.13.0 || >=24.0.0",
+    );
+  });
+
+  it("uses Node types matching the minimum supported runtime", () => {
+    expect(packageJson.devDependencies["@types/node"]).toBe("^20.19.0");
+  });
+});
