@@ -1,0 +1,9 @@
+.superpowers/
+work/
+outputs/
+.env
+.env.*
+!.env.example
+backups/
+node_modules/
+dist/
