@@ -1,6 +1,6 @@
 # Shopify.dev 中文阅读代理
 
-面向个人使用的 Shopify 开发文档中文阅读工具。当前 Phase 1 已完成单用户密码登录、安全会话、受保护阅读界面、健康检查与自动化测试基础。
+面向个人使用的 Shopify 开发文档中文阅读工具。当前 Phase 2 已完成单用户访问控制，以及 Shopify.dev 英文文档的发现、结构化采集、版本保存和每日增量检查。
 
 ## 本地环境
 
@@ -41,7 +41,55 @@
    corepack pnpm dev
    ```
 
+6. 在另一个终端启动持久化采集 Worker：
+
+   ```powershell
+   corepack pnpm worker
+   ```
+
 默认访问地址为 `http://127.0.0.1:3000`。密码哈希保存在 PostgreSQL 中；浏览器只保存 HttpOnly 会话 cookie，数据库仅保存会话 token 的 SHA-256 哈希。
+
+## 内容采集
+
+- 采集范围为 `https://shopify.dev/docs` 和 `/docs/**`，包括 `/docs/api/**`，不包括 Changelog。
+- Worker 每日刷新 Robots、Sitemap 和已收录页面，仅在内容变化时创建新版本和待翻译任务。
+- 页面优先请求 Shopify.dev 的 `.txt` 表示；不可用时回退到 HTML。
+- Phase 2 只采集和版本化英文原文，不调用 AI，也不会在用户访问页面时实时翻译。
+- 自动化测试全部使用本地 Fixture HTTP 服务，不会抓取公开 Shopify.dev。
+
+采集参数通过环境变量配置：
+
+| 环境变量 | 默认值 | 说明 |
+| --- | ---: | --- |
+| `SOURCE_REQUEST_CONCURRENCY` | `2` | 最大并发源站请求数，范围 `1..4` |
+| `SOURCE_REQUEST_INTERVAL_MS` | `500` | 两次请求启动之间的最小间隔 |
+| `SOURCE_TIMEOUT_MS` | `20000` | 单次请求超时 |
+| `SOURCE_MAX_RESPONSE_BYTES` | `8388608` | 单个响应最大字节数 |
+| `INGESTION_POLL_INTERVAL_MS` | `1000` | Worker 空闲轮询间隔 |
+| `INGESTION_LEASE_MS` | `120000` | 任务租约；必须至少为请求超时的两倍 |
+
+开发时可使用自动重载：
+
+```powershell
+corepack pnpm worker:dev
+```
+
+只读查看最近任务状态：
+
+```sql
+select
+  queue,
+  type,
+  status,
+  attempts,
+  run_at,
+  last_error_code,
+  left(last_error_message, 200) as last_error
+from jobs
+where status in ('queued', 'running', 'failed')
+order by created_at desc
+limit 100;
+```
 
 ## 验证
 
@@ -76,4 +124,4 @@ corepack pnpm exec playwright install chromium
 
 ## 当前范围
 
-Phase 1 尚未包含 Shopify.dev 内容抓取、AI 翻译、术语保护、中英文统一搜索、管理后台、每日增量更新、备份和生产部署。这些能力将在后续阶段接入。
+Phase 2 尚未实现 AI 翻译、专业术语保护、中英文统一搜索、人工修订后台、14 天备份和生产部署。这些能力将在后续阶段接入。

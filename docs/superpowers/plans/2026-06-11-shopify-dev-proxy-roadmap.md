@@ -57,8 +57,13 @@ Exit criteria:
 
 ## Phase 2: Shopify Content Discovery And Versioned Ingestion
 
-Create the detailed plan only after Phase 1 is merged so file paths and database
-interfaces match the real code.
+Status: Implemented and verified on June 12, 2026.
+
+Design:
+`docs/superpowers/specs/2026-06-12-shopify-content-ingestion-design.md`
+
+Detailed implementation plan:
+`docs/superpowers/plans/2026-06-12-shopify-content-ingestion.md`
 
 Deliverables:
 

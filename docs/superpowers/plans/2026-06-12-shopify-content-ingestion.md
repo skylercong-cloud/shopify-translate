@@ -3,11 +3,13 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` (recommended) or
 > `superpowers:executing-plans` to implement this plan task-by-task. Steps use
-> checkbox (`- [ ]`) syntax for tracking.
+> checkbox syntax for tracking; every item is checked after final verification.
 
 **Goal:** Discover approved Shopify.dev `/docs/**` pages, fetch and parse them into
 stable content blocks, publish versioned English source pages atomically, and enqueue
 only new or changed translatable blocks.
+
+**Status:** Completed and verified on June 12, 2026.
 
 **Architecture:** Keep ingestion inside the existing TypeScript modular monolith.
 Pure domain modules handle URL policy, parsing, fingerprints, and diffs; PostgreSQL
@@ -101,7 +103,7 @@ tests/
 - Create: `drizzle/meta/0001_snapshot.json`
 - Test: `tests/integration/ingestion-repository.test.ts`
 
-- [ ] **Step 1: Install the focused parser dependencies**
+- [x] **Step 1: Install the focused parser dependencies**
 
 Run:
 
@@ -114,7 +116,7 @@ Expected: `package.json` and `pnpm-lock.yaml` contain the seven runtime packages
 the Robots type package. Do not add Axios, Redis, a browser runtime, or a general job
 framework.
 
-- [ ] **Step 2: Write a failing schema integration test**
+- [x] **Step 2: Write a failing schema integration test**
 
 Create `tests/integration/ingestion-repository.test.ts` with a database safety guard
 matching the existing integration tests and this initial assertion:
@@ -167,7 +169,7 @@ describe("ingestion schema", () => {
 });
 ```
 
-- [ ] **Step 3: Run the test to verify the schema is absent**
+- [x] **Step 3: Run the test to verify the schema is absent**
 
 Run:
 
@@ -181,7 +183,7 @@ corepack pnpm test:integration -- tests/integration/ingestion-repository.test.ts
 
 Expected: FAIL because the eight Phase 2 tables do not exist.
 
-- [ ] **Step 4: Define the Drizzle schema**
+- [x] **Step 4: Define the Drizzle schema**
 
 Create `src/db/schema/jobs.ts` with exported enum value arrays and a `jobs` table.
 Use a partial unique index so a `dedupe_key` can be reused after completion:
@@ -280,7 +282,7 @@ export * from "./ingestion";
 export * from "./jobs";
 ```
 
-- [ ] **Step 5: Generate and inspect the migration**
+- [x] **Step 5: Generate and inspect the migration**
 
 Run:
 
@@ -293,7 +295,7 @@ Expected: one new migration and snapshot. Inspect it to confirm the partial uniq
 job index and all foreign keys/check constraints are present. If Drizzle generates a
 different numeric filename, use that generated filename consistently.
 
-- [ ] **Step 6: Apply the migration and pass the schema test**
+- [x] **Step 6: Apply the migration and pass the schema test**
 
 Run:
 
@@ -304,7 +306,7 @@ corepack pnpm test:integration -- tests/integration/ingestion-repository.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add package.json pnpm-lock.yaml src/db/schema drizzle tests/integration/ingestion-repository.test.ts
@@ -324,7 +326,7 @@ git commit -m "feat: add ingestion persistence schema"
 - Test: `tests/unit/robots-policy.test.ts`
 - Create: `tests/fixtures/ingestion/robots.txt`
 
-- [ ] **Step 1: Write failing URL policy tests**
+- [x] **Step 1: Write failing URL policy tests**
 
 Create `tests/unit/url-policy.test.ts`:
 
@@ -395,7 +397,7 @@ describe("Shopify docs URL policy", () => {
 });
 ```
 
-- [ ] **Step 2: Run the URL policy test and confirm failure**
+- [x] **Step 2: Run the URL policy test and confirm failure**
 
 Run:
 
@@ -405,7 +407,7 @@ corepack pnpm test -- tests/unit/url-policy.test.ts
 
 Expected: FAIL because `url-policy.ts` does not exist.
 
-- [ ] **Step 3: Implement URL policy and stable errors**
+- [x] **Step 3: Implement URL policy and stable errors**
 
 Create `src/modules/ingestion/errors.ts`:
 
@@ -440,7 +442,7 @@ paths, and paths outside `/docs`. The resource redirect function allows any
 query-free HTTPS path on the exact `shopify.dev` origin for Robots and Sitemap
 resources, but it is never used to create `source_pages`.
 
-- [ ] **Step 4: Add Robots fixture and failing policy tests**
+- [x] **Step 4: Add Robots fixture and failing policy tests**
 
 Create `tests/fixtures/ingestion/robots.txt`:
 
@@ -487,7 +489,7 @@ describe("robots policy", () => {
 });
 ```
 
-- [ ] **Step 5: Implement Robots parsing**
+- [x] **Step 5: Implement Robots parsing**
 
 Wrap `robots-parser` in `robots-policy.ts`. Expose:
 
@@ -507,7 +509,7 @@ export function requireRobotsPolicy(
 Use the fixed application User-Agent, keep only same-origin HTTPS Sitemap URLs, and
 fall back to `https://shopify.dev/sitemap.xml` when none are declared.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 Run:
 
@@ -517,7 +519,7 @@ corepack pnpm test -- tests/unit/url-policy.test.ts tests/unit/robots-policy.tes
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/modules/ingestion tests/unit/url-policy.test.ts tests/unit/robots-policy.test.ts tests/fixtures/ingestion/robots.txt
@@ -532,7 +534,7 @@ git commit -m "feat: enforce Shopify source access policy"
 - Create: `src/db/repositories/job-repository.ts`
 - Test: `tests/integration/job-repository.test.ts`
 
-- [ ] **Step 1: Write failing queue integration tests**
+- [x] **Step 1: Write failing queue integration tests**
 
 Create `tests/integration/job-repository.test.ts`. Clean only jobs whose dedupe keys
 start with a random per-test prefix. Cover:
@@ -572,7 +574,7 @@ it("claims by priority and recovers an expired lease", async () => {
 Also test `complete`, retry scheduling, terminal failure at `maxAttempts`, and error
 message truncation.
 
-- [ ] **Step 2: Run the queue test and confirm failure**
+- [x] **Step 2: Run the queue test and confirm failure**
 
 Run:
 
@@ -582,7 +584,7 @@ corepack pnpm test:integration -- tests/integration/job-repository.test.ts
 
 Expected: FAIL because the repository does not exist.
 
-- [ ] **Step 3: Define queue types**
+- [x] **Step 3: Define queue types**
 
 Create `src/modules/jobs/types.ts`:
 
@@ -622,7 +624,7 @@ export type EnqueueJobResult = {
 };
 ```
 
-- [ ] **Step 4: Implement atomic enqueue and claim**
+- [x] **Step 4: Implement atomic enqueue and claim**
 
 Create `job-repository.ts` with:
 
@@ -657,7 +659,7 @@ lock the active job, raise priority with `greatest`, and move `run_at` earlier w
 `least`. Return `promoted` if either priority increases or `run_at` moves earlier,
 otherwise return `deduplicated`.
 
-- [ ] **Step 5: Pass queue tests**
+- [x] **Step 5: Pass queue tests**
 
 Run:
 
@@ -667,7 +669,7 @@ corepack pnpm test:integration -- tests/integration/job-repository.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/modules/jobs src/db/repositories/job-repository.ts tests/integration/job-repository.test.ts
@@ -681,7 +683,7 @@ git commit -m "feat: add durable PostgreSQL job queue"
 - Create: `src/modules/ingestion/source-client.ts`
 - Test: `tests/unit/source-client.test.ts`
 
-- [ ] **Step 1: Write failing source client tests**
+- [x] **Step 1: Write failing source client tests**
 
 Use injected `fetch`, `sleep`, and clock functions. Cover:
 
@@ -714,7 +716,7 @@ expect(result).toEqual({
 });
 ```
 
-- [ ] **Step 2: Run the tests and confirm failure**
+- [x] **Step 2: Run the tests and confirm failure**
 
 Run:
 
@@ -724,7 +726,7 @@ corepack pnpm test -- tests/unit/source-client.test.ts
 
 Expected: FAIL because `source-client.ts` does not exist.
 
-- [ ] **Step 3: Implement typed fetch outcomes**
+- [x] **Step 3: Implement typed fetch outcomes**
 
 In `source-client.ts`, export:
 
@@ -775,7 +777,7 @@ tests do not wait in real time. `fetchPage()` validates every redirect with the
 strict docs policy; `fetchTextResource()` uses the same-origin resource redirect
 policy and therefore cannot widen the set of persisted page URLs.
 
-- [ ] **Step 4: Pass source client tests**
+- [x] **Step 4: Pass source client tests**
 
 Run:
 
@@ -785,7 +787,7 @@ corepack pnpm test -- tests/unit/source-client.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add src/modules/ingestion/source-client.ts tests/unit/source-client.test.ts
@@ -803,7 +805,7 @@ git commit -m "feat: add bounded Shopify source client"
 - Modify: `src/db/repositories/ingestion-repository.ts`
 - Test: `tests/integration/ingestion-repository.test.ts`
 
-- [ ] **Step 1: Add Sitemap fixtures**
+- [x] **Step 1: Add Sitemap fixtures**
 
 `sitemap-index.xml` must reference one same-origin child Sitemap and one external
 Sitemap. `sitemap-docs.xml` must contain:
@@ -818,7 +820,7 @@ Sitemap. `sitemap-docs.xml` must contain:
 
 Include valid `<lastmod>` values for at least two allowed pages.
 
-- [ ] **Step 2: Write failing parser tests**
+- [x] **Step 2: Write failing parser tests**
 
 Create `tests/unit/sitemap.test.ts` covering URL Set, Sitemap Index, deduplication,
 recursive depth, maximum file count, maximum candidate count, and external Sitemap
@@ -841,7 +843,7 @@ expect(discovered).toEqual([
 ]);
 ```
 
-- [ ] **Step 3: Implement recursive Sitemap discovery**
+- [x] **Step 3: Implement recursive Sitemap discovery**
 
 Use `fast-xml-parser` with external entity processing disabled. Export:
 
@@ -862,7 +864,7 @@ Only recurse into same-origin HTTPS Sitemap URLs. Apply URL Policy and Robots Po
 to every page candidate. Sort the final result by canonical URL for deterministic
 tests.
 
-- [ ] **Step 4: Add repository tests for complete Discovery**
+- [x] **Step 4: Add repository tests for complete Discovery**
 
 Extend `ingestion-repository.test.ts` to assert:
 
@@ -872,7 +874,7 @@ Extend `ingestion-repository.test.ts` to assert:
 - A simulated failed Discovery does not call the missing-page update.
 - Newly discovered pages enqueue low-priority `fetch_page` jobs.
 
-- [ ] **Step 5: Implement Discovery persistence**
+- [x] **Step 5: Implement Discovery persistence**
 
 Create the initial `ingestion-repository.ts` methods:
 
@@ -891,7 +893,7 @@ markMissingFromCompletedDiscovery(input: {
 The service layer, not the parser, calls `markMissingFromCompletedDiscovery()` only
 after every Sitemap finishes successfully.
 
-- [ ] **Step 6: Run unit and integration tests**
+- [x] **Step 6: Run unit and integration tests**
 
 Run:
 
@@ -902,7 +904,7 @@ corepack pnpm test:integration -- tests/integration/ingestion-repository.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/modules/ingestion/sitemap.ts src/db/repositories/ingestion-repository.ts tests/fixtures/ingestion tests/unit/sitemap.test.ts tests/integration/ingestion-repository.test.ts
@@ -921,7 +923,7 @@ git commit -m "feat: discover approved Shopify documentation pages"
 - Create: `tests/fixtures/ingestion/page.html`
 - Test: `tests/unit/ingestion-parser.test.ts`
 
-- [ ] **Step 1: Create equivalent Markdown and HTML fixtures**
+- [x] **Step 1: Create equivalent Markdown and HTML fixtures**
 
 Both fixtures must represent the same document and contain:
 
@@ -936,7 +938,7 @@ Both fixtures must represent the same document and contain:
 The HTML fixture must include distracting `nav`, search, login, footer, script, and
 button elements outside a single `<main>` element.
 
-- [ ] **Step 2: Write failing parser tests**
+- [x] **Step 2: Write failing parser tests**
 
 Create `ingestion-parser.test.ts`:
 
@@ -971,7 +973,7 @@ image URL/Alt/Caption, and protected inline token payloads. Add failure tests fo
 unique HTML `<main>`, empty content, too many blocks, excessive nesting, and an
 oversized block.
 
-- [ ] **Step 3: Implement shared parser types**
+- [x] **Step 3: Implement shared parser types**
 
 In `types.ts`, define `BlockType`, `ProtectedToken`, `ParsedBlock`, and `ParsedPage`.
 Keep `payload` JSON-safe:
@@ -985,14 +987,14 @@ export type ProtectedToken = {
 };
 ```
 
-- [ ] **Step 4: Implement Markdown AST parsing**
+- [x] **Step 4: Implement Markdown AST parsing**
 
 Use `unified().use(remarkParse).use(remarkGfm).parse(body)`. Traverse MDAST nodes and
 convert only supported nodes into domain blocks. Treat blockquotes whose first text
 starts with `Note:`, `Tip:`, `Caution:`, or `Warning:` as notices. Preserve code
 content exactly except CRLF-to-LF normalization.
 
-- [ ] **Step 5: Implement HTML DOM parsing**
+- [x] **Step 5: Implement HTML DOM parsing**
 
 Use Cheerio to parse HTML. Require exactly one `main`, `article`, or
 `[data-docs-content]` candidate after applying an ordered selector list; reject
@@ -1000,7 +1002,7 @@ ambiguous matches at the selected priority. Remove `nav`, `footer`, `script`,
 `style`, forms, buttons, and elements marked hidden. Convert semantic elements to
 the same domain block payload shapes as Markdown.
 
-- [ ] **Step 6: Add parser validation and pass tests**
+- [x] **Step 6: Add parser validation and pass tests**
 
 `parser.ts` selects the format parser, assigns ordinals, validates:
 
@@ -1017,7 +1019,7 @@ corepack pnpm test -- tests/unit/ingestion-parser.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/modules/ingestion tests/fixtures/ingestion/page.md tests/fixtures/ingestion/page.html tests/unit/ingestion-parser.test.ts
@@ -1033,7 +1035,7 @@ git commit -m "feat: parse Shopify docs into structured blocks"
 - Create: `tests/fixtures/ingestion/page-changed.md`
 - Test: `tests/unit/ingestion-diff.test.ts`
 
-- [ ] **Step 1: Write failing fingerprint tests**
+- [x] **Step 1: Write failing fingerprint tests**
 
 Cover:
 
@@ -1043,7 +1045,7 @@ Cover:
 - Link destinations and inline protected token values affect the fingerprint.
 - Page order affects the page fingerprint.
 
-- [ ] **Step 2: Write failing diff tests**
+- [x] **Step 2: Write failing diff tests**
 
 Use small explicit block arrays to cover:
 
@@ -1068,7 +1070,7 @@ export type BlockDiff = {
 };
 ```
 
-- [ ] **Step 3: Implement canonical JSON fingerprints**
+- [x] **Step 3: Implement canonical JSON fingerprints**
 
 `fingerprint.ts` must recursively sort object keys before JSON serialization, preserve
 array order, normalize prose whitespace, and normalize only line endings for code.
@@ -1079,14 +1081,14 @@ fingerprintBlock(block: ParsedBlock): string;
 fingerprintPage(blocks: FingerprintedBlock[]): string;
 ```
 
-- [ ] **Step 4: Implement deterministic matching**
+- [x] **Step 4: Implement deterministic matching**
 
 `diff.ts` first pairs exact `type + fingerprint` matches using nearest ordinal and a
 stable index tie-break. Then align remaining same-type blocks using heading path and
 neighbor fingerprints. A current block is a translation candidate only when it is
 `added` or `modified` and `translatable` is true.
 
-- [ ] **Step 5: Pass diff tests**
+- [x] **Step 5: Pass diff tests**
 
 Run:
 
@@ -1096,7 +1098,7 @@ corepack pnpm test -- tests/unit/ingestion-diff.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/modules/ingestion/fingerprint.ts src/modules/ingestion/diff.ts tests/fixtures/ingestion/page-changed.md tests/unit/ingestion-diff.test.ts
@@ -1110,7 +1112,7 @@ git commit -m "feat: detect stable source block changes"
 - Modify: `src/db/repositories/ingestion-repository.ts`
 - Test: `tests/integration/ingestion-repository.test.ts`
 
-- [ ] **Step 1: Write failing publisher integration tests**
+- [x] **Step 1: Write failing publisher integration tests**
 
 Extend the repository test with isolated source URLs and cleanup. Cover:
 
@@ -1126,7 +1128,7 @@ Extend the repository test with isolated source URLs and cleanup. Cover:
    translation jobs, and current pointer.
 7. Two concurrent identical publishes produce only one new version.
 
-- [ ] **Step 2: Run the publisher tests and confirm failure**
+- [x] **Step 2: Run the publisher tests and confirm failure**
 
 Run:
 
@@ -1136,7 +1138,7 @@ corepack pnpm test:integration -- tests/integration/ingestion-repository.test.ts
 
 Expected: FAIL because publish methods are absent.
 
-- [ ] **Step 3: Implement page state methods**
+- [x] **Step 3: Implement page state methods**
 
 Add:
 
@@ -1157,7 +1159,7 @@ markPageGone(pageId: string, checkedAt: Date): Promise<void>;
 markPageBlocked(pageId: string, checkedAt: Date): Promise<void>;
 ```
 
-- [ ] **Step 4: Implement transactional publish**
+- [x] **Step 4: Implement transactional publish**
 
 Add:
 
@@ -1199,7 +1201,7 @@ type PublishHooks = {
 
 The repository factory accepts hooks; production passes none.
 
-- [ ] **Step 5: Pass publisher tests**
+- [x] **Step 5: Pass publisher tests**
 
 Run:
 
@@ -1209,7 +1211,7 @@ corepack pnpm test:integration -- tests/integration/ingestion-repository.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/db/repositories/ingestion-repository.ts tests/integration/ingestion-repository.test.ts
@@ -1224,7 +1226,7 @@ git commit -m "feat: publish versioned source pages atomically"
 - Test: `tests/helpers/fixture-server.ts`
 - Test: `tests/integration/ingestion-pipeline.test.ts`
 
-- [ ] **Step 1: Create a local Fixture HTTP server**
+- [x] **Step 1: Create a local Fixture HTTP server**
 
 `fixture-server.ts` must:
 
@@ -1238,7 +1240,7 @@ git commit -m "feat: publish versioned source pages atomically"
 The production URL policy stays fixed to `shopify.dev`; tests inject a transport that
 maps approved Shopify URLs to the local server without weakening policy code.
 
-- [ ] **Step 2: Write failing service tests**
+- [x] **Step 2: Write failing service tests**
 
 Create `ingestion-pipeline.test.ts` with real PostgreSQL, real parsers, real
 repositories, and the local server. Cover:
@@ -1255,7 +1257,7 @@ repositories, and the local server. Cover:
 - Parser failure stores a 7-day diagnostic payload and preserves the current version.
 - Expired diagnostic payload cleanup deletes only expired rows.
 
-- [ ] **Step 3: Define service dependencies and public API**
+- [x] **Step 3: Define service dependencies and public API**
 
 Create `ingestion-service.ts`:
 
@@ -1283,7 +1285,7 @@ export function createIngestionService(deps: {
 }
 ```
 
-- [ ] **Step 4: Complete repository support for policies and diagnostics**
+- [x] **Step 4: Complete repository support for policies and diagnostics**
 
 Add these methods to `ingestion-repository.ts` before implementing the service:
 
@@ -1312,7 +1314,7 @@ listActivePagesForRefresh(): Promise<
 `saveRobotsPolicy()` only runs after successful parsing. A failed fetch must never
 overwrite the last successful policy.
 
-- [ ] **Step 5: Implement orchestration and attempts**
+- [x] **Step 5: Implement orchestration and attempts**
 
 For every source request, insert a `fetch_attempts` row with stable result/error codes.
 On parse failure, save the bounded body in `source_payloads` with
@@ -1328,7 +1330,7 @@ On parse failure, save the bounded body in `source_payloads` with
   map both `created` and `deduplicated` to `queued`.
 - Never expose an anonymous HTTP route in Phase 2.
 
-- [ ] **Step 6: Pass pipeline tests**
+- [x] **Step 6: Pass pipeline tests**
 
 Run:
 
@@ -1338,7 +1340,7 @@ corepack pnpm test:integration -- tests/integration/ingestion-pipeline.test.ts
 
 Expected: PASS without contacting the public internet.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/modules/ingestion/ingestion-service.ts tests/helpers/fixture-server.ts tests/integration/ingestion-pipeline.test.ts
@@ -1359,7 +1361,7 @@ git commit -m "feat: compose the Shopify ingestion pipeline"
 - Test: `tests/integration/job-repository.test.ts`
 - Test: `tests/integration/ingestion-pipeline.test.ts`
 
-- [ ] **Step 1: Write failing environment and scheduler tests**
+- [x] **Step 1: Write failing environment and scheduler tests**
 
 Extend `env.test.ts` for:
 
@@ -1382,12 +1384,12 @@ Add scheduler tests asserting:
 - Active pages receive one daily refresh job each.
 - Refresh `run_at` values are spread deterministically across 24 hours.
 
-- [ ] **Step 2: Implement validated environment settings**
+- [x] **Step 2: Implement validated environment settings**
 
 Add the six variables to `env.ts` with the defaults above and to `.env.example`.
 Derive the source client and worker configuration only from `getEnv()`.
 
-- [ ] **Step 3: Implement scheduler**
+- [x] **Step 3: Implement scheduler**
 
 `scheduler.ts` exports:
 
@@ -1406,7 +1408,7 @@ refresh:<page-id>:2026-06-12
 
 Distribute pages by a stable hash of page ID modulo 86,400 seconds.
 
-- [ ] **Step 4: Implement worker dispatch and lease renewal**
+- [x] **Step 4: Implement worker dispatch and lease renewal**
 
 `worker.ts` must claim only `ingestion` jobs and dispatch:
 
@@ -1419,7 +1421,7 @@ Start lease renewal every `leaseMs / 3`, clear the timer in `finally`, and compl
 only if the current worker still owns the lease. Retry with 1 minute, 5 minute, and
 30 minute backoff plus injected jitter.
 
-- [ ] **Step 5: Add the executable worker entrypoint**
+- [x] **Step 5: Add the executable worker entrypoint**
 
 Create `src/worker/main.ts` that composes `db`, repositories, source client, service,
 scheduler, and worker. Handle `SIGINT`/`SIGTERM`, stop claiming new jobs, await the
@@ -1434,7 +1436,7 @@ Add scripts:
 }
 ```
 
-- [ ] **Step 6: Run focused tests**
+- [x] **Step 6: Run focused tests**
 
 Run:
 
@@ -1445,7 +1447,7 @@ corepack pnpm test:integration -- tests/integration/job-repository.test.ts tests
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/modules/jobs src/worker src/lib/env.ts .env.example package.json tests/unit/env.test.ts tests/integration
@@ -1460,7 +1462,7 @@ git commit -m "feat: run scheduled ingestion workers"
 - Modify: `docs/superpowers/plans/2026-06-11-shopify-dev-proxy-roadmap.md`
 - Modify: `docs/superpowers/plans/2026-06-12-shopify-content-ingestion.md`
 
-- [ ] **Step 1: Update local operation documentation**
+- [x] **Step 1: Update local operation documentation**
 
 Add to `README.md`:
 
@@ -1471,12 +1473,12 @@ Add to `README.md`:
 - How to inspect queued/running/failed jobs with a read-only SQL query.
 - Automated tests use fixtures and never crawl Shopify.dev.
 
-- [ ] **Step 2: Update the roadmap status**
+- [x] **Step 2: Update the roadmap status**
 
 Mark Phase 2 as implemented only after all acceptance commands pass. Link the design
 and this detailed plan from the Phase 2 section. Do not mark Phase 3 started.
 
-- [ ] **Step 3: Run migration from a clean test database**
+- [x] **Step 3: Run migration from a clean test database**
 
 Use the dedicated `shopify_docs_test` database. Drop and recreate only that explicitly
 named test database using the existing local PostgreSQL test runtime, then run:
@@ -1491,7 +1493,7 @@ corepack pnpm db:migrate
 
 Expected: both foundation and content-ingestion migrations apply successfully.
 
-- [ ] **Step 4: Run the complete verification suite**
+- [x] **Step 4: Run the complete verification suite**
 
 Run:
 
@@ -1515,7 +1517,7 @@ Expected:
 - Production build completes.
 - No test makes a request to public Shopify.dev.
 
-- [ ] **Step 5: Check migration and working-tree hygiene**
+- [x] **Step 5: Check migration and working-tree hygiene**
 
 Run:
 
@@ -1526,7 +1528,7 @@ git status --short
 
 Expected: no whitespace errors and only intended Phase 2 files are modified.
 
-- [ ] **Step 6: Commit documentation and plan completion**
+- [x] **Step 6: Commit documentation and plan completion**
 
 ```powershell
 git add README.md docs/superpowers/plans
