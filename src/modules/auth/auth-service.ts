@@ -5,11 +5,7 @@ export function createAuthService(repository: AuthRepository) {
   return {
     async setAdminPassword(password: string) {
       const passwordHash = await hashPassword(password);
-      const admin = await repository.upsertAdminPassword(passwordHash);
-
-      await repository.deleteSessionsForUser(admin.id);
-
-      return admin;
+      return repository.replaceAdminPasswordAndRevokeSessions(passwordHash);
     },
 
     async authenticateAdmin(password: string) {

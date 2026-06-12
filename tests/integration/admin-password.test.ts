@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { db } from "@/db/client";
@@ -40,5 +41,44 @@ describe("setAdminPassword", () => {
     expect(first?.id).toBe(second?.id);
     expect(first?.passwordHash).not.toBe(second?.passwordHash);
     expect(revoked).toBeUndefined();
+  });
+
+  it("rolls back the password change when session revocation fails", async () => {
+    await service.setAdminPassword("first password value");
+    const first = await repository.findAdmin();
+    await repository.createSession({
+      id: "00000000-0000-4000-8000-000000000002",
+      tokenHash: "c".repeat(64),
+      userId: first!.id,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    await db.execute(sql`
+      create function fail_session_delete() returns trigger as $$
+      begin
+        raise exception 'forced session delete failure';
+      end;
+      $$ language plpgsql
+    `);
+    await db.execute(sql`
+      create trigger fail_session_delete
+      before delete on sessions
+      for each row execute function fail_session_delete()
+    `);
+
+    try {
+      await expect(
+        service.setAdminPassword("second password value"),
+      ).rejects.toThrow();
+
+      const unchanged = await repository.findAdmin();
+      const session = await db.query.sessions.findFirst();
+
+      expect(unchanged?.passwordHash).toBe(first?.passwordHash);
+      expect(session).toBeDefined();
+    } finally {
+      await db.execute(sql`drop trigger fail_session_delete on sessions`);
+      await db.execute(sql`drop function fail_session_delete()`);
+    }
   });
 });

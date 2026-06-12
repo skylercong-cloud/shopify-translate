@@ -20,6 +20,25 @@ export function createAuthRepository(db: Database) {
       return user;
     },
 
+    replaceAdminPasswordAndRevokeSessions(passwordHash: string) {
+      return db.transaction(async (transaction) => {
+        const [user] = await transaction
+          .insert(users)
+          .values({ username: "admin", passwordHash })
+          .onConflictDoUpdate({
+            target: users.username,
+            set: { passwordHash, updatedAt: new Date() },
+          })
+          .returning();
+
+        await transaction
+          .delete(sessions)
+          .where(eq(sessions.userId, user.id));
+
+        return user;
+      });
+    },
+
     findAdmin() {
       return db.query.users.findFirst({
         where: eq(users.username, "admin"),

@@ -6,6 +6,7 @@ export type Admin = {
 
 export interface AuthRepository {
   upsertAdminPassword(passwordHash: string): Promise<Admin>;
+  replaceAdminPasswordAndRevokeSessions(passwordHash: string): Promise<Admin>;
   findAdmin(): Promise<Admin | undefined>;
   deleteSessionsForUser(userId: string): Promise<void>;
 }
