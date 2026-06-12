@@ -38,4 +38,5 @@ export interface SessionRepository {
     tokenHash: string,
   ): Promise<StoredSession | undefined>;
   deleteSessionByTokenHash(tokenHash: string): Promise<void>;
+  deleteExpiredSessions(now: Date): Promise<void>;
 }

@@ -3,11 +3,15 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import type * as schema from "@/db/schema";
 import { sessions, users } from "@/db/schema";
+import type {
+  AuthRepository,
+  SessionRepository,
+} from "@/modules/auth/types";
 
 type Database = NodePgDatabase<typeof schema>;
 
 export function createAuthRepository(db: Database) {
-  return {
+  const repository = {
     async upsertAdminPassword(passwordHash: string) {
       const [user] = await db
         .insert(users)
@@ -54,7 +58,12 @@ export function createAuthRepository(db: Database) {
       return db.query.sessions.findFirst({
         where: eq(sessions.tokenHash, tokenHash),
         with: {
-          user: true,
+          user: {
+            columns: {
+              id: true,
+              username: true,
+            },
+          },
         },
       });
     },
@@ -70,5 +79,7 @@ export function createAuthRepository(db: Database) {
     async deleteExpiredSessions(now: Date) {
       await db.delete(sessions).where(lte(sessions.expiresAt, now));
     },
-  };
+  } satisfies AuthRepository & SessionRepository;
+
+  return repository;
 }

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { MAXIMUM_SESSION_DAYS } from "@/modules/auth/constants";
+
 const appOriginSchema = z.string().url().refine(
   (value) => {
     let url: URL;
@@ -28,7 +30,12 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().url(),
   APP_ORIGIN: appOriginSchema,
-  SESSION_DAYS: z.coerce.number().int().positive().default(30),
+  SESSION_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(MAXIMUM_SESSION_DAYS)
+    .default(30),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

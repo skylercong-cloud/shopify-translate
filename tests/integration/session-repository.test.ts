@@ -39,5 +39,6 @@ describe("database sessions", () => {
 
     expect(stored?.tokenHash).not.toBe(token);
     expect(stored?.user.username).toBe("admin");
+    expect(stored?.user).not.toHaveProperty("passwordHash");
   });
 });
