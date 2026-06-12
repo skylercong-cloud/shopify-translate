@@ -1,4 +1,4 @@
-import { eq, lt } from "drizzle-orm";
+import { eq, lte } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import type * as schema from "@/db/schema";
@@ -49,7 +49,7 @@ export function createAuthRepository(db: Database) {
     },
 
     async deleteExpiredSessions(now: Date) {
-      await db.delete(sessions).where(lt(sessions.expiresAt, now));
+      await db.delete(sessions).where(lte(sessions.expiresAt, now));
     },
   };
 }

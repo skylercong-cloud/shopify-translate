@@ -10,5 +10,9 @@ const pool = new Pool({
   max: 10,
 });
 
+pool.on("error", (error) => {
+  console.error("Unexpected PostgreSQL pool error", error);
+});
+
 export const db = drizzle(pool, { schema });
 export { pool };

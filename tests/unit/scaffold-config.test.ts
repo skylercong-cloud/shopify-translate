@@ -18,6 +18,11 @@ const tsconfig = JSON.parse(
   compilerOptions: { jsx: string };
 };
 
+const composeConfig = readFileSync(
+  resolve(process.cwd(), "compose.yaml"),
+  "utf8",
+);
+
 describe("application scaffold configuration", () => {
   it("uses Corepack for the Playwright development server", () => {
     expect(playwrightConfig.webServer).toMatchObject({
@@ -37,5 +42,9 @@ describe("application scaffold configuration", () => {
 
   it("uses the stable JSX runtime required by Next.js 16 builds", () => {
     expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
+  });
+
+  it("publishes the development database only on the loopback interface", () => {
+    expect(composeConfig).toContain('"127.0.0.1:5432:5432"');
   });
 });

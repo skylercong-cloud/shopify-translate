@@ -3,8 +3,11 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db, pool } from "./client";
 
 async function main() {
-  await migrate(db, { migrationsFolder: "./drizzle" });
-  await pool.end();
+  try {
+    await migrate(db, { migrationsFolder: "./drizzle" });
+  } finally {
+    await pool.end();
+  }
 }
 
 main().catch((error) => {
