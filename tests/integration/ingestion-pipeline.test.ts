@@ -20,6 +20,7 @@ import {
   createRequestGate,
   createSourceClient,
 } from "@/modules/ingestion/source-client";
+import { createIngestionScheduler } from "@/modules/jobs/scheduler";
 import { startFixtureServer } from "../helpers/fixture-server";
 
 const ingestionRepository = createIngestionRepository(db);
@@ -49,7 +50,9 @@ afterEach(async () => {
     .where(eq(robotsPolicies.origin, "https://shopify.dev"));
 });
 
-async function createHarness(routes: Parameters<typeof startFixtureServer>[0]) {
+async function createHarness(
+  routes: Parameters<typeof startFixtureServer>[0] = {},
+) {
   const server = await startFixtureServer(routes);
   servers.push(server);
   const sourceClient = createSourceClient({
@@ -323,5 +326,54 @@ describe("ingestion pipeline", () => {
     const remaining = await db.query.sourcePayloads.findMany();
     expect(remaining).toHaveLength(1);
     expect(remaining[0].body).toBe("retained");
+  });
+
+  it("deduplicates daily maintenance and spreads page refresh jobs", async () => {
+    const now = new Date("2026-06-12T08:30:00Z");
+    const pages = await Promise.all(
+      Array.from({ length: 4 }, async (_, index) => {
+        const canonicalUrl = `https://shopify.dev/docs/scheduled-${randomUUID()}-${index}`;
+        createdUrls.push(canonicalUrl);
+        return ingestionRepository.ensureSourcePage(canonicalUrl, now);
+      }),
+    );
+    const scheduler = createIngestionScheduler({
+      ingestionRepository,
+      jobRepository,
+    });
+
+    await scheduler.ensureMaintenanceJobs(now);
+    await scheduler.ensureMaintenanceJobs(now);
+    await scheduler.scheduleDailyPageRefreshes(now);
+    await scheduler.scheduleDailyPageRefreshes(now);
+
+    const maintenanceJobs = await db.query.jobs.findMany({
+      where: eq(jobs.queue, "ingestion"),
+    });
+    const scheduledRefreshes = maintenanceJobs.filter((job) =>
+      pages.some(
+        (page) =>
+          job.dedupeKey === `refresh:${page.id}:2026-06-12`,
+      ),
+    );
+    expect(
+      maintenanceJobs.filter((job) =>
+        job.dedupeKey.startsWith("maintenance:"),
+      ),
+    ).toHaveLength(2);
+    expect(scheduledRefreshes).toHaveLength(pages.length);
+
+    const dayStart = new Date("2026-06-12T00:00:00Z").getTime();
+    const nextDay = new Date("2026-06-13T00:00:00Z").getTime();
+    expect(
+      scheduledRefreshes.every(
+        (job) =>
+          job.runAt.getTime() >= dayStart &&
+          job.runAt.getTime() < nextDay,
+      ),
+    ).toBe(true);
+    expect(
+      new Set(scheduledRefreshes.map((job) => job.runAt.getTime())).size,
+    ).toBeGreaterThan(1);
   });
 });

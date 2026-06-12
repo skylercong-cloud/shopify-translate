@@ -10,6 +10,7 @@ const packageJson = JSON.parse(
 ) as {
   engines: { node: string };
   devDependencies: Record<string, string>;
+  scripts: Record<string, string>;
 };
 
 const tsconfig = JSON.parse(
@@ -47,6 +48,13 @@ describe("application scaffold configuration", () => {
 
   it("uses Node types matching the minimum supported runtime", () => {
     expect(packageJson.devDependencies["@types/node"]).toBe("^20.19.0");
+  });
+
+  it("exposes persistent ingestion worker scripts", () => {
+    expect(packageJson.scripts.worker).toBe("tsx src/worker/main.ts");
+    expect(packageJson.scripts["worker:dev"]).toBe(
+      "tsx watch src/worker/main.ts",
+    );
   });
 
   it("uses the stable JSX runtime required by Next.js 16 builds", () => {

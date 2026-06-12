@@ -300,11 +300,47 @@ export function createJobRepository(db: Database) {
     });
   }
 
+  async function fail(input: {
+    jobId: string;
+    workerId: string;
+    now: Date;
+    errorCode: string;
+    errorMessage: string;
+  }): Promise<void> {
+    const failed = await db
+      .update(jobs)
+      .set({
+        status: "failed",
+        leaseOwner: null,
+        leaseExpiresAt: null,
+        lastErrorCode: input.errorCode,
+        lastErrorMessage: input.errorMessage.slice(
+          0,
+          MAX_ERROR_MESSAGE_LENGTH,
+        ),
+        completedAt: input.now,
+        updatedAt: input.now,
+      })
+      .where(
+        and(
+          eq(jobs.id, input.jobId),
+          eq(jobs.status, "running"),
+          eq(jobs.leaseOwner, input.workerId),
+        ),
+      )
+      .returning({ id: jobs.id });
+
+    if (failed.length !== 1) {
+      throw leaseLost();
+    }
+  }
+
   return {
     enqueue,
     claimNext,
     renewLease,
     complete,
     retryOrFail,
+    fail,
   };
 }

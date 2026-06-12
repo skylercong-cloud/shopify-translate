@@ -230,4 +230,40 @@ describe("job repository", () => {
       leaseExpiresAt: null,
     });
   });
+
+  it("terminally fails a job while its lease is owned", async () => {
+    const now = new Date("2026-06-12T00:00:00Z");
+    const created = await repository.enqueue(
+      jobInput("terminal", {
+        runAt: now,
+        maxAttempts: 3,
+      }),
+    );
+    await repository.claimNext({
+      queue: "ingestion",
+      workerId: "worker-a",
+      now,
+      leaseMs: 120_000,
+    });
+
+    await repository.fail({
+      jobId: created.job.id,
+      workerId: "worker-a",
+      now,
+      errorCode: "worker_job_type_invalid",
+      errorMessage: "wrong worker",
+    });
+
+    const stored = await db.query.jobs.findFirst({
+      where: eq(jobs.id, created.job.id),
+    });
+    expect(stored).toMatchObject({
+      status: "failed",
+      attempts: 1,
+      completedAt: now,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      lastErrorCode: "worker_job_type_invalid",
+    });
+  });
 });
