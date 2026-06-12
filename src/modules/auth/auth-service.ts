@@ -10,19 +10,21 @@ import type {
   SessionRepository,
 } from "@/modules/auth/types";
 
+const DUMMY_PASSWORD_HASH =
+  "$argon2id$v=19$m=19456,t=2,p=1$c2hvcGlmeS1kb2NzLWR1bW15LXNhbHQ$4ciQ+XkFy30JpD6jUb6Vxk/a/TQbFKVxbo4wlH0J78o";
+
 export function createAuthService(
   repository: AuthRepository & SessionRepository,
 ) {
   async function authenticateAdmin(password: string) {
     const admin = await repository.findAdmin();
 
-    if (!admin) {
-      return null;
-    }
+    const authenticated = await verifyPassword(
+      admin?.passwordHash ?? DUMMY_PASSWORD_HASH,
+      password,
+    );
 
-    const authenticated = await verifyPassword(admin.passwordHash, password);
-
-    return authenticated ? admin : null;
+    return admin && authenticated ? admin : null;
   }
 
   return {
