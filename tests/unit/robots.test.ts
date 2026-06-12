@@ -6,8 +6,9 @@ import { describe, expect, it } from "vitest";
 describe("robots.txt", () => {
   it("disallows all crawlers", async () => {
     const robotsPath = resolve("public/robots.txt");
+    const contents = await readFile(robotsPath, "utf8");
 
-    await expect(readFile(robotsPath, "utf8")).resolves.toBe(
+    expect(contents.replaceAll("\r\n", "\n")).toBe(
       "User-agent: *\nDisallow: /\n",
     );
   });

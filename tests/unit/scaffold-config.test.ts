@@ -23,6 +23,11 @@ const composeConfig = readFileSync(
   "utf8",
 );
 
+const eslintConfig = readFileSync(
+  resolve(process.cwd(), "eslint.config.mjs"),
+  "utf8",
+);
+
 describe("application scaffold configuration", () => {
   it("uses Corepack for the Playwright development server", () => {
     expect(playwrightConfig.webServer).toMatchObject({
@@ -50,5 +55,12 @@ describe("application scaffold configuration", () => {
 
   it("publishes the development database only on the loopback interface", () => {
     expect(composeConfig).toContain('"127.0.0.1:5432:5432"');
+  });
+
+  it("keeps generated files from nested worktrees out of linting", () => {
+    expect(eslintConfig).toContain('".worktrees/**"');
+    expect(eslintConfig).toContain('"work/**"');
+    expect(eslintConfig).toContain('"**/.next/**"');
+    expect(eslintConfig).toContain('"**/test-results/**"');
   });
 });
