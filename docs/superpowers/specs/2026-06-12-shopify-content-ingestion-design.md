@@ -1,7 +1,7 @@
 # Shopify.dev 内容发现与版本化采集设计
 
 日期：2026-06-12  
-状态：设计已确认，等待书面规格审核  
+状态：书面规格已确认
 阶段：Phase 2
 
 ## 1. 目标
@@ -264,18 +264,37 @@ HTML 解析只读取主要文档区域，并移除导航、页脚、登录入口
 - `id`
 - `canonical_url`，唯一
 - `path`
-- `title`
+- `title`，可空
 - `status`：`active | gone | blocked`
 - `current_version_id`，可空
 - `etag`，可空
 - `last_modified`，可空
-- `last_checked_at`
-- `last_success_at`
+- `last_checked_at`，可空
+- `last_success_at`，可空
+- `last_discovered_at`，可空
 - `missing_from_sitemap_at`，可空
 - `created_at`
 - `updated_at`
 
-### 5.2 `page_versions`
+`last_discovered_at` 只在完整且成功的 Discovery 中更新。本次成功 Discovery
+结束后，早于本次开始时间的页面才会设置 `missing_from_sitemap_at`；部分失败或
+超限的 Discovery 不执行缺失标记。
+
+### 5.2 `robots_policies`
+
+- `id`
+- `origin`，唯一
+- `body`
+- `sitemap_urls`，JSONB
+- `fetched_at`
+- `expires_at`
+- `created_at`
+- `updated_at`
+
+只保存最后一次成功解析的策略。读取失败不会覆盖有效记录；从未存在记录时采用
+fail-closed。
+
+### 5.3 `page_versions`
 
 - `id`
 - `page_id`
@@ -289,7 +308,7 @@ HTML 解析只读取主要文档区域，并移除导航、页脚、登录入口
 
 历史版本长期保留。相同页面指纹不会产生新记录。
 
-### 5.3 `content_blocks`
+### 5.4 `content_blocks`
 
 - `id`
 - `page_version_id`
@@ -304,7 +323,7 @@ HTML 解析只读取主要文档区域，并移除导航、页脚、登录入口
 
 `page_version_id + ordinal` 唯一。
 
-### 5.4 `block_changes`
+### 5.5 `block_changes`
 
 - `id`
 - `page_version_id`
@@ -317,7 +336,7 @@ HTML 解析只读取主要文档区域，并移除导航、页脚、登录入口
 `moved` 同时引用前后区块。完全未变化且位置也未变化的区块不需要差异记录。
 该表让删除区块可以在不向新版本插入墓碑内容的情况下被准确记录。
 
-### 5.5 `fetch_attempts`
+### 5.6 `fetch_attempts`
 
 - `id`
 - `job_id`
@@ -337,7 +356,7 @@ HTML 解析只读取主要文档区域，并移除导航、页脚、登录入口
 
 抓取元数据长期保留，用于诊断更新频率和失败原因。
 
-### 5.6 `source_payloads`
+### 5.7 `source_payloads`
 
 - `id`
 - `fetch_attempt_id`
@@ -349,7 +368,7 @@ HTML 解析只读取主要文档区域，并移除导航、页脚、登录入口
 原始响应仅用于短期诊断，正文受 8 MiB 上限约束，默认保留 7 天。每日维护任务
 删除过期记录。正式阅读和历史版本不依赖该表。
 
-### 5.7 `jobs`
+### 5.8 `jobs`
 
 - `id`
 - `queue`：`ingestion | translation`
