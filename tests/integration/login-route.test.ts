@@ -1,4 +1,11 @@
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 
 import { POST } from "@/app/api/auth/login/route";
 import { db } from "@/db/client";
@@ -20,10 +27,13 @@ beforeAll(() => {
   }
 });
 
-afterEach(async () => {
+async function resetAuthState() {
   loginRateLimit.reset();
   await db.delete(users);
-});
+}
+
+beforeEach(resetAuthState);
+afterEach(resetAuthState);
 
 function loginRequest(password: string) {
   return new Request("http://localhost/api/auth/login", {
