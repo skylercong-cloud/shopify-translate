@@ -73,7 +73,7 @@ export function LoginForm() {
   }
 
   return (
-    <form className="login-card" onSubmit={submit}>
+    <form className="login-card" method="post" onSubmit={submit}>
       <p className="eyebrow">个人文档工具</p>
       <h1>登录</h1>
       <label htmlFor="password">密码</label>

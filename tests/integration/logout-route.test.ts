@@ -48,7 +48,10 @@ describe("POST /api/auth/logout", () => {
 
     const response = await POST();
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe(
+      "http://127.0.0.1:3000/login",
+    );
     await expect(
       repository.findSessionByTokenHash(hashSessionToken(token)),
     ).resolves.toBeUndefined();

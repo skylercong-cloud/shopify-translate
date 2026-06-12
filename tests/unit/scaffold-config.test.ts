@@ -26,7 +26,11 @@ const composeConfig = readFileSync(
 describe("application scaffold configuration", () => {
   it("uses Corepack for the Playwright development server", () => {
     expect(playwrightConfig.webServer).toMatchObject({
-      command: "corepack pnpm@10.12.4 dev",
+      command:
+        "corepack pnpm@10.12.4 exec next dev -H 127.0.0.1 -p 3000",
+      env: {
+        NODE_ENV: "development",
+      },
     });
   });
 
