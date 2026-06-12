@@ -8,3 +8,10 @@ outputs/
 backups/
 node_modules/
 dist/
+.next/
+playwright-report/
+test-results/
+coverage/
+next-env.d.ts
+*.tsbuildinfo
+*.log
