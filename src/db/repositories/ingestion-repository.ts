@@ -4,6 +4,7 @@ import {
   eq,
   isNull,
   lt,
+  lte,
   max,
   or,
   sql,
@@ -14,9 +15,12 @@ import type * as schema from "@/db/schema";
 import {
   blockChanges,
   contentBlocks,
+  fetchAttempts,
   jobs,
   pageVersions,
+  robotsPolicies,
   sourcePages,
+  sourcePayloads,
 } from "@/db/schema";
 import { diffBlocks } from "@/modules/ingestion/diff";
 import type {
@@ -30,6 +34,8 @@ type Database = NodePgDatabase<typeof schema>;
 type PublishHooks = {
   afterVersionInserted?: () => Promise<void>;
 };
+export type FetchAttemptInput = typeof fetchAttempts.$inferInsert;
+export type StoredRobotsPolicy = typeof robotsPolicies.$inferSelect;
 
 const INSERT_BATCH_SIZE = 500;
 
@@ -93,6 +99,25 @@ export function createIngestionRepository(
       });
     },
 
+    async ensureSourcePage(canonicalUrl: string, createdAt: Date) {
+      const [page] = await db
+        .insert(sourcePages)
+        .values({
+          canonicalUrl,
+          path: new URL(canonicalUrl).pathname,
+          createdAt,
+          updatedAt: createdAt,
+        })
+        .onConflictDoUpdate({
+          target: sourcePages.canonicalUrl,
+          set: {
+            path: new URL(canonicalUrl).pathname,
+          },
+        })
+        .returning();
+      return page;
+    },
+
     async markMissingFromCompletedDiscovery(input: {
       discoveryStartedAt: Date;
       completedAt: Date;
@@ -121,6 +146,80 @@ export function createIngestionRepository(
       return db.query.sourcePages.findFirst({
         where: eq(sourcePages.canonicalUrl, canonicalUrl),
       });
+    },
+
+    getRobotsPolicy(origin: string) {
+      return db.query.robotsPolicies.findFirst({
+        where: eq(robotsPolicies.origin, origin),
+      });
+    },
+
+    async saveRobotsPolicy(input: {
+      origin: string;
+      body: string;
+      sitemapUrls: string[];
+      fetchedAt: Date;
+      expiresAt: Date;
+    }): Promise<StoredRobotsPolicy> {
+      const [policy] = await db
+        .insert(robotsPolicies)
+        .values({
+          ...input,
+          createdAt: input.fetchedAt,
+          updatedAt: input.fetchedAt,
+        })
+        .onConflictDoUpdate({
+          target: robotsPolicies.origin,
+          set: {
+            body: input.body,
+            sitemapUrls: input.sitemapUrls,
+            fetchedAt: input.fetchedAt,
+            expiresAt: input.expiresAt,
+            updatedAt: input.fetchedAt,
+          },
+        })
+        .returning();
+      return policy;
+    },
+
+    async recordFetchAttempt(
+      input: FetchAttemptInput,
+    ): Promise<{ id: string }> {
+      const [attempt] = await db
+        .insert(fetchAttempts)
+        .values(input)
+        .returning({ id: fetchAttempts.id });
+      return attempt;
+    },
+
+    async saveSourcePayload(input: {
+      fetchAttemptId: string;
+      contentType: string;
+      body: string;
+      expiresAt: Date;
+    }): Promise<void> {
+      await db.insert(sourcePayloads).values(input);
+    },
+
+    async deleteExpiredSourcePayloads(now: Date): Promise<number> {
+      const deleted = await db
+        .delete(sourcePayloads)
+        .where(lte(sourcePayloads.expiresAt, now))
+        .returning({ id: sourcePayloads.id });
+      return deleted.length;
+    },
+
+    async listActivePagesForRefresh(): Promise<
+      Array<{ id: string; canonicalUrl: string }>
+    > {
+      return db
+        .select({
+          id: sourcePages.id,
+          canonicalUrl: sourcePages.canonicalUrl,
+        })
+        .from(sourcePages)
+        .where(eq(sourcePages.status, "active"))
+        .orderBy(asc(sourcePages.id));
     },
 
     async getCurrentPageSnapshot(pageId: string) {
@@ -415,3 +514,7 @@ export function createIngestionRepository(
     },
   };
 }
+
+export type IngestionRepository = ReturnType<
+  typeof createIngestionRepository
+>;
