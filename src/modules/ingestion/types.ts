@@ -37,6 +37,24 @@ export type ParsedPage = {
   sourceFormat: SourceFormat;
 };
 
+export type FingerprintedBlock = ParsedBlock & {
+  contentFingerprint: string;
+};
+
+export type BlockDiff = {
+  changes: Array<
+    | { kind: "added"; currentIndex: number }
+    | {
+        kind: "modified";
+        previousIndex: number;
+        currentIndex: number;
+      }
+    | { kind: "moved"; previousIndex: number; currentIndex: number }
+    | { kind: "deleted"; previousIndex: number }
+  >;
+  translationCandidateIndexes: number[];
+};
+
 export type ParserLimits = {
   maxBlocks: number;
   maxNestingDepth: number;
