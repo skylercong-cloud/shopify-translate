@@ -10,3 +10,32 @@ export interface AuthRepository {
   findAdmin(): Promise<Admin | undefined>;
   deleteSessionsForUser(userId: string): Promise<void>;
 }
+
+export type StoredSession = {
+  id: string;
+  tokenHash: string;
+  userId: string;
+  expiresAt: Date;
+  user: {
+    id: string;
+    username: string;
+  };
+};
+
+export interface SessionRepository {
+  createSession(input: {
+    id: string;
+    tokenHash: string;
+    userId: string;
+    expiresAt: Date;
+  }): Promise<{
+    id: string;
+    tokenHash: string;
+    userId: string;
+    expiresAt: Date;
+  }>;
+  findSessionByTokenHash(
+    tokenHash: string,
+  ): Promise<StoredSession | undefined>;
+  deleteSessionByTokenHash(tokenHash: string): Promise<void>;
+}
