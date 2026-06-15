@@ -243,13 +243,31 @@ export function createTranslationRepository(db: Database) {
     ): Promise<PublicationResult> {
       return db.transaction(async (transaction) => {
         const [translation] = await transaction
-          .select()
+          .select({
+            ...getTableColumns(blockTranslations),
+            pageVersionId: contentBlocks.pageVersionId,
+            currentPageVersionId: sourcePages.currentVersionId,
+          })
           .from(blockTranslations)
+          .innerJoin(
+            contentBlocks,
+            eq(contentBlocks.id, blockTranslations.blockId),
+          )
+          .innerJoin(
+            pageVersions,
+            eq(pageVersions.id, contentBlocks.pageVersionId),
+          )
+          .innerJoin(
+            sourcePages,
+            eq(sourcePages.id, pageVersions.pageId),
+          )
           .where(eq(blockTranslations.blockId, input.blockId))
           .limit(1)
           .for("update");
         if (
           !translation ||
+          translation.pageVersionId !==
+            translation.currentPageVersionId ||
           translation.sourceFingerprint !==
             input.expectedSourceFingerprint
         ) {
