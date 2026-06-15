@@ -576,7 +576,7 @@ export type ProtectedTranslationInput = {
 
 export function protectTranslationInput(input: {
   sourceText: string;
-  blockKind: ContentBlockKind;
+  blockKind: BlockType;
   parserTokens: ProtectedToken[];
   glossaryTerms: string[];
 }): ProtectedTranslationInput | { translatable: false };
@@ -584,9 +584,11 @@ export function protectTranslationInput(input: {
 
 Algorithm:
 
-1. Return non-translatable for fenced and indented code block kinds.
+1. Return non-translatable for the parser's normalized `code` block type.
 2. Mask literal source substrings matching `/⟦P\d{4,}⟧/u`.
-3. Apply parser-provided offsets in ascending order after validating non-overlap.
+3. Apply parser-provided offsets in ascending order after validating
+   non-overlap, and restore the visible `sourceText.slice(start, end)` rather
+   than token metadata such as a link destination URL.
 4. Find glossary matches in remaining unprotected spans.
 5. Sort candidates by start offset, then descending source term length.
 6. Reject matches whose adjacent character satisfies `/[\p{L}\p{N}_]/u`.
@@ -610,7 +612,7 @@ Validate:
 - every expected placeholder appears exactly once;
 - placeholders appear in original order;
 - no unknown placeholder appears;
-- the restored result contains no internal placeholder;
+- the candidate contains no unknown internal placeholder;
 - restored output is below the provider response byte limit.
 
 Return typed validation errors with stable codes:
