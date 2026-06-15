@@ -33,6 +33,16 @@ function createDependencies(
 ) {
   return {
     service,
+    adminService: {
+      recordManualCorrection: vi.fn(),
+      listCorrectionHistory: vi.fn().mockResolvedValue([]),
+      enqueueRetranslation: vi.fn().mockResolvedValue({
+        targeted: 0,
+        created: 0,
+        deduplicated: 0,
+        promoted: 0,
+      }),
+    },
     getMasterKey: vi.fn(() => masterKey),
     promptApiKey: vi.fn().mockResolvedValue("sk-secret"),
     readTextFile: vi.fn(),
@@ -274,5 +284,115 @@ describe("model CLI", () => {
     expect(output).toContain('"promptVersion": 3');
     expect(output).not.toContain("sk-decrypted-secret");
     expect(output).not.toContain('"apiKey"');
+  });
+
+  it("adds a manual correction from a text file", async () => {
+    const service = createService();
+    const dependencies = createDependencies(service, {
+      readTextFile: vi.fn().mockResolvedValue("人工修订译文。\n"),
+    });
+    vi.mocked(
+      dependencies.adminService.recordManualCorrection,
+    ).mockResolvedValue({
+      kind: "published",
+      correction: { id: "correction-id" },
+      revision: { id: "revision-id" },
+    });
+
+    await runModelCli(
+      [
+        "correction",
+        "add",
+        "--block-id",
+        "block-id",
+        "--file",
+        "translation.txt",
+        "--scope",
+        "block",
+      ],
+      dependencies,
+    );
+
+    expect(
+      dependencies.adminService.recordManualCorrection,
+    ).toHaveBeenCalledWith({
+      blockId: "block-id",
+      translatedText: "人工修订译文。\n",
+      scope: "block",
+    });
+    expect(dependencies.writeOutput).toHaveBeenCalledWith(
+      "Manual correction recorded.",
+    );
+  });
+
+  it("prints correction history counts without translated content", async () => {
+    const service = createService();
+    const dependencies = createDependencies(service);
+    vi.mocked(
+      dependencies.adminService.listCorrectionHistory,
+    ).mockResolvedValue([
+      {
+        id: "correction-id",
+        scope: "global",
+        sourceFingerprint: "fingerprint",
+        blockId: null,
+        createdAt: new Date("2026-06-15T00:00:00.000Z"),
+      },
+    ]);
+
+    await runModelCli(
+      ["correction", "history", "--block-id", "block-id"],
+      dependencies,
+    );
+
+    const output = vi.mocked(dependencies.writeOutput).mock.calls[0][0];
+    expect(output).toBe("Correction history entries: 1.");
+    expect(output).not.toContain("translatedText");
+  });
+
+  it.each([
+    [
+      ["retranslate", "--block-id", "block-id"],
+      { blockId: "block-id" },
+    ],
+    [
+      ["retranslate", "--page", "/docs/apps"],
+      { pagePath: "/docs/apps" },
+    ],
+    [
+      ["retranslate", "--all", "--confirm-all"],
+      { all: true },
+    ],
+  ] as const)("enqueues an explicit retranslation target", async (args, target) => {
+    const service = createService();
+    const dependencies = createDependencies(service);
+    vi.mocked(
+      dependencies.adminService.enqueueRetranslation,
+    ).mockResolvedValue({
+      targeted: 3,
+      created: 2,
+      deduplicated: 1,
+      promoted: 0,
+    });
+
+    await runModelCli([...args], dependencies);
+
+    expect(
+      dependencies.adminService.enqueueRetranslation,
+    ).toHaveBeenCalledWith(target);
+    expect(dependencies.writeOutput).toHaveBeenCalledWith(
+      "Retranslation targeted=3 created=2 deduplicated=1 promoted=0.",
+    );
+  });
+
+  it("requires explicit confirmation for all-content retranslation", async () => {
+    const dependencies = createDependencies(createService());
+
+    await expect(
+      runModelCli(["retranslate", "--all"], dependencies),
+    ).rejects.toThrow("--confirm-all");
+    expect(
+      dependencies.adminService.enqueueRetranslation,
+    ).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,9 @@
 import type { TranslationConfigService } from "./config-service";
+import type { TranslationAdminService } from "./translation-admin-service";
 
 type ModelCliDependencies = {
   service: TranslationConfigService;
+  adminService: TranslationAdminService;
   getMasterKey(): Buffer;
   promptApiKey(provider: "deepseek" | "qwen"): Promise<string>;
   readTextFile(path: string): Promise<string>;
@@ -15,7 +17,12 @@ const USAGE = `Usage:
   pnpm model settings set [--request-timeout-ms <n>] [--max-input-bytes <n>] [--max-output-tokens <n>] [--worker-concurrency <n>]
   pnpm model prompt activate --system-file <path> --user-file <path>
   pnpm model glossary activate --file <path>
-  pnpm model readiness`;
+  pnpm model readiness
+  pnpm model correction add --block-id <uuid> --file <path> [--scope global|block]
+  pnpm model correction history --block-id <uuid>
+  pnpm model retranslate --block-id <uuid>
+  pnpm model retranslate --page <canonical path>
+  pnpm model retranslate --all --confirm-all`;
 
 function parseOptions(
   args: string[],
@@ -56,6 +63,52 @@ function parseInteger(value: string, name: string): number {
     throw new Error(`${name} must be a positive safe integer`);
   }
   return parsed;
+}
+
+function parseRetranslationTarget(args: string[]): {
+  target: { blockId?: string; pagePath?: string; all?: boolean };
+  confirmAll: boolean;
+} {
+  const target: {
+    blockId?: string;
+    pagePath?: string;
+    all?: boolean;
+  } = {};
+  let confirmAll = false;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const option = args[index];
+    if (option === "--all") {
+      if (target.all) throw new Error("Duplicate option --all");
+      target.all = true;
+      continue;
+    }
+    if (option === "--confirm-all") {
+      if (confirmAll) throw new Error("Duplicate option --confirm-all");
+      confirmAll = true;
+      continue;
+    }
+    if (option === "--block-id" || option === "--page") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error(`Missing required value for ${option}\n${USAGE}`);
+      }
+      if (option === "--block-id") {
+        if (target.blockId) {
+          throw new Error("Duplicate option --block-id");
+        }
+        target.blockId = value;
+      } else {
+        if (target.pagePath) throw new Error("Duplicate option --page");
+        target.pagePath = value;
+      }
+      index += 1;
+      continue;
+    }
+    throw new Error(`Unsupported option ${option}\n${USAGE}`);
+  }
+
+  return { target, confirmAll };
 }
 
 function publicProvider(
@@ -248,6 +301,61 @@ export async function runModelCli(
         null,
         2,
       ),
+    );
+    return;
+  }
+
+  if (group === "correction" && command === "add") {
+    const options = parseOptions(
+      subject === undefined ? rest : [subject, ...rest],
+      ["--block-id", "--file", "--scope"],
+    );
+    const scope = options.get("--scope") ?? "global";
+    if (scope !== "global" && scope !== "block") {
+      throw new Error("--scope must be global or block");
+    }
+    const translatedText = await dependencies.readTextFile(
+      requireOption(options, "--file"),
+    );
+    await dependencies.adminService.recordManualCorrection({
+      blockId: requireOption(options, "--block-id"),
+      translatedText,
+      scope,
+    });
+    dependencies.writeOutput("Manual correction recorded.");
+    return;
+  }
+
+  if (group === "correction" && command === "history") {
+    const options = parseOptions(
+      subject === undefined ? rest : [subject, ...rest],
+      ["--block-id"],
+    );
+    const history =
+      await dependencies.adminService.listCorrectionHistory(
+        requireOption(options, "--block-id"),
+      );
+    dependencies.writeOutput(
+      `Correction history entries: ${history.length}.`,
+    );
+    return;
+  }
+
+  if (group === "retranslate") {
+    const rawOptions = [command, subject, ...rest].filter(
+      (value): value is string => value !== undefined,
+    );
+    const { target, confirmAll } =
+      parseRetranslationTarget(rawOptions);
+    if (target.all && !confirmAll) {
+      throw new Error(
+        "--confirm-all is required with --all retranslation",
+      );
+    }
+    const result =
+      await dependencies.adminService.enqueueRetranslation(target);
+    dependencies.writeOutput(
+      `Retranslation targeted=${result.targeted} created=${result.created} deduplicated=${result.deduplicated} promoted=${result.promoted}.`,
     );
     return;
   }
