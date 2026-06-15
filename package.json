@@ -20,6 +20,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "admin": "tsx src/cli/admin.ts",
+    "model": "tsx src/cli/model.ts",
     "worker": "tsx src/worker/main.ts",
     "worker:dev": "tsx watch src/worker/main.ts"
   },

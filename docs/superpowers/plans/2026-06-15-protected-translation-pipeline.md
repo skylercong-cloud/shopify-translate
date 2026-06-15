@@ -396,10 +396,12 @@ git commit -m "feat: protect model provider credentials"
 **Files:**
 - Create: `src/db/repositories/translation-config-repository.ts`
 - Create: `src/modules/translation/config-service.ts`
+- Create: `src/modules/translation/model-cli.ts`
 - Create: `src/cli/model.ts`
 - Modify: `package.json`
 - Create: `tests/integration/translation-config-repository.test.ts`
 - Create: `tests/unit/translation/config-service.test.ts`
+- Create: `tests/unit/translation/model-cli.test.ts`
 
 ### Step 1: Write failing repository and service tests
 
@@ -441,8 +443,8 @@ export interface TranslationConfigRepository {
   upsertProvider(config: StoredProviderConfig): Promise<void>;
   getProvider(provider: TranslationProvider): Promise<StoredProviderConfig | null>;
   listProviders(): Promise<StoredProviderConfig[]>;
-  setDailyTokenLimit(limit: number): Promise<void>;
-  getDailyTokenLimit(): Promise<number | null>;
+  updateSettings(input: RuntimeSettingsUpdate): Promise<TranslationRuntimeSettings>;
+  getSettings(): Promise<TranslationRuntimeSettings>;
   createAndActivatePrompt(input: PromptVersionInput): Promise<PromptVersion>;
   getActivePrompt(): Promise<PromptVersion | null>;
   createAndActivateGlossary(terms: string[]): Promise<GlossaryVersionWithTerms>;
@@ -477,6 +479,7 @@ pnpm model provider set deepseek --model <id> [--base-url <url>]
 pnpm model provider set qwen --model <id> [--base-url <url>]
 pnpm model provider list
 pnpm model budget set --daily-tokens <positive integer>
+pnpm model settings set [--request-timeout-ms <n>] [--max-input-bytes <n>] [--max-output-tokens <n>] [--worker-concurrency <n>]
 pnpm model prompt activate --system-file <path> --user-file <path>
 pnpm model glossary activate --file <newline-delimited path>
 pnpm model readiness
