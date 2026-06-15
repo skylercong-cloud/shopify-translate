@@ -17,6 +17,12 @@ describe("parseEnv", () => {
       SOURCE_MAX_RESPONSE_BYTES: 8_388_608,
       INGESTION_POLL_INTERVAL_MS: 1_000,
       INGESTION_LEASE_MS: 120_000,
+      TRANSLATION_WORKER_ID: "translation-1",
+      TRANSLATION_POLL_INTERVAL_MS: 1_000,
+      TRANSLATION_LEASE_MS: 180_000,
+      TRANSLATION_HEARTBEAT_MS: 60_000,
+      TRANSLATION_STALE_RESERVATION_MS: 300_000,
+      TRANSLATION_STALE_REQUEST_MS: 900_000,
     });
   });
 
@@ -93,5 +99,47 @@ describe("parseEnv", () => {
         INGESTION_LEASE_MS: "39999",
       }),
     ).toThrow("INGESTION_LEASE_MS");
+  });
+
+  it("parses explicit translation worker settings", () => {
+    expect(
+      parseEnv({
+        ...validEnv,
+        TRANSLATION_WORKER_ID: "translation-private",
+        TRANSLATION_POLL_INTERVAL_MS: "250",
+        TRANSLATION_LEASE_MS: "240000",
+        TRANSLATION_HEARTBEAT_MS: "80000",
+        TRANSLATION_STALE_RESERVATION_MS: "600000",
+        TRANSLATION_STALE_REQUEST_MS: "1200000",
+      }),
+    ).toMatchObject({
+      TRANSLATION_WORKER_ID: "translation-private",
+      TRANSLATION_POLL_INTERVAL_MS: 250,
+      TRANSLATION_LEASE_MS: 240_000,
+      TRANSLATION_HEARTBEAT_MS: 80_000,
+      TRANSLATION_STALE_RESERVATION_MS: 600_000,
+      TRANSLATION_STALE_REQUEST_MS: 1_200_000,
+    });
+  });
+
+  it.each([
+    ["TRANSLATION_WORKER_ID", ""],
+    ["TRANSLATION_POLL_INTERVAL_MS", "99"],
+    ["TRANSLATION_LEASE_MS", "999"],
+    ["TRANSLATION_HEARTBEAT_MS", "0"],
+    ["TRANSLATION_STALE_RESERVATION_MS", "0"],
+    ["TRANSLATION_STALE_REQUEST_MS", "0"],
+  ])("rejects invalid translation worker setting %s=%s", (key, value) => {
+    expect(() => parseEnv({ ...validEnv, [key]: value })).toThrow(key);
+  });
+
+  it("requires the translation heartbeat to be shorter than the lease", () => {
+    expect(() =>
+      parseEnv({
+        ...validEnv,
+        TRANSLATION_LEASE_MS: "60000",
+        TRANSLATION_HEARTBEAT_MS: "60000",
+      }),
+    ).toThrow("TRANSLATION_HEARTBEAT_MS");
   });
 });

@@ -203,6 +203,7 @@ export function createTranslationService(
     request: TranslationProviderRequest;
     protectedInput: ProtectedTranslationInput;
     callSequence: number;
+    signal?: AbortSignal;
   }): Promise<ProviderAttempt> {
     const requestBody = input.client.serializeRequest(input.request);
     const requestBytes = Buffer.byteLength(requestBody, "utf8");
@@ -241,7 +242,10 @@ export function createTranslationService(
     let providerResult: TranslationProviderResult | null = null;
 
     try {
-      providerResult = await input.client.translate(input.request);
+      providerResult = await input.client.translate(
+        input.request,
+        input.signal,
+      );
       const validated = validateTranslationOutput({
         content: providerResult.content,
         protectedInput: input.protectedInput,
@@ -275,7 +279,17 @@ export function createTranslationService(
         modelCallId: audit.id,
       };
     } catch (error) {
-      const failure = failureFrom(error);
+      const aborted =
+        input.signal?.aborted ||
+        (error instanceof DOMException && error.name === "AbortError");
+      const failure = aborted
+        ? {
+            kind: "failure" as const,
+            failureKind: "transient_error" as const,
+            code: "worker_shutdown",
+            message: "Translation request aborted during worker shutdown",
+          }
+        : failureFrom(error);
       const completedAt = options.now();
       await options.audit.record({
         jobId: input.jobId,
@@ -296,6 +310,7 @@ export function createTranslationService(
         startedAt,
         completedAt,
       });
+      if (aborted) throw error;
       return failure;
     } finally {
       await options.tokenBudget.settle({
@@ -357,7 +372,7 @@ export function createTranslationService(
     async run(input: {
       jobId: string;
       blockId: string;
-    }): Promise<TranslationRunResult> {
+    }, signal?: AbortSignal): Promise<TranslationRunResult> {
       let callSequence = 0;
       const context =
         await options.translationRepository.loadBlockContext(
@@ -437,6 +452,12 @@ export function createTranslationService(
 
       let deepseekFailure: ProviderFailure | null = null;
       for (let attempt = 0; attempt < 3; attempt += 1) {
+        if (signal?.aborted) {
+          throw new DOMException(
+            "Translation request aborted",
+            "AbortError",
+          );
+        }
         const result = await callProvider({
           jobId: input.jobId,
           blockId: block.id,
@@ -448,6 +469,7 @@ export function createTranslationService(
           },
           protectedInput,
           callSequence: ++callSequence,
+          signal,
         });
         if (result.kind === "success") {
           return publishProviderResult({
@@ -527,6 +549,7 @@ export function createTranslationService(
         },
         protectedInput,
         callSequence: ++callSequence,
+        signal,
       });
       if (qwenResult.kind === "success") {
         return publishProviderResult({

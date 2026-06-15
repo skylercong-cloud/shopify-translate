@@ -73,6 +73,36 @@ const envSchema = z
       .int()
       .positive()
       .default(120_000),
+    TRANSLATION_WORKER_ID: z
+      .string()
+      .trim()
+      .min(1)
+      .default("translation-1"),
+    TRANSLATION_POLL_INTERVAL_MS: z.coerce
+      .number()
+      .int()
+      .min(100)
+      .default(1_000),
+    TRANSLATION_LEASE_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .default(180_000),
+    TRANSLATION_HEARTBEAT_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(60_000),
+    TRANSLATION_STALE_RESERVATION_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(300_000),
+    TRANSLATION_STALE_REQUEST_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(900_000),
   })
   .superRefine((env, context) => {
     if (env.INGESTION_LEASE_MS < env.SOURCE_TIMEOUT_MS * 2) {
@@ -80,6 +110,13 @@ const envSchema = z
         code: "custom",
         path: ["INGESTION_LEASE_MS"],
         message: "must be at least twice SOURCE_TIMEOUT_MS",
+      });
+    }
+    if (env.TRANSLATION_HEARTBEAT_MS >= env.TRANSLATION_LEASE_MS) {
+      context.addIssue({
+        code: "custom",
+        path: ["TRANSLATION_HEARTBEAT_MS"],
+        message: "must be shorter than TRANSLATION_LEASE_MS",
       });
     }
   });

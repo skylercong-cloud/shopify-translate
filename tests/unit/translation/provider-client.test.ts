@@ -122,6 +122,27 @@ describe("OpenAI-compatible translation provider", () => {
     });
   });
 
+  it("aborts an in-flight request when the worker shuts down", async () => {
+    const fetchImpl = vi.fn(
+      async (_url: URL | RequestInfo, init?: RequestInit) =>
+        await new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("aborted", "AbortError"));
+          });
+        }),
+    ) as unknown as typeof fetch;
+    const controller = new AbortController();
+    const running = client("deepseek", fetchImpl).translate(
+      request,
+      controller.signal,
+    );
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+
+    controller.abort();
+
+    await expect(running).rejects.toMatchObject({ name: "AbortError" });
+  });
+
   it("stops reading a success response above the byte limit", async () => {
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {

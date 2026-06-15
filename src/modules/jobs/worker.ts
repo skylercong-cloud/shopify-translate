@@ -1,5 +1,9 @@
 import type { createJobRepository } from "@/db/repositories/job-repository";
 import { IngestionError } from "@/modules/ingestion/errors";
+import {
+  createLeasedJobRunner,
+  type JobExecutionResult,
+} from "@/modules/jobs/leased-job-runner";
 import type { ClaimedJob } from "@/modules/jobs/types";
 
 type JobRepository = Pick<
@@ -19,7 +23,6 @@ type IngestionScheduler = {
   scheduleDailyPageRefreshes(now: Date): Promise<number>;
 };
 
-type WorkerResult = "idle" | "worked" | "lease_lost";
 type IntervalCallback = () => void | Promise<void>;
 
 const RETRY_BACKOFF_MS = [60_000, 5 * 60_000, 30 * 60_000] as const;
@@ -87,129 +90,66 @@ export function createIngestionWorker(deps: {
   ) => unknown;
   clearIntervalImpl?: (handle: unknown) => void;
 }) {
-  const setIntervalImpl =
-    deps.setIntervalImpl ??
-    ((callback: IntervalCallback, milliseconds: number) =>
-      setInterval(() => void callback(), milliseconds));
-  const clearIntervalImpl =
-    deps.clearIntervalImpl ??
-    ((handle: unknown) =>
-      clearInterval(handle as ReturnType<typeof setInterval>));
-
-  async function dispatch(job: ClaimedJob): Promise<void> {
-    if (job.type === "discover_sitemap") {
-      await deps.ingestionService.refreshRobotsPolicy();
-      await deps.ingestionService.discoverPages();
-      await deps.scheduler.scheduleDailyPageRefreshes(deps.now());
-      await deps.scheduler.ensureMaintenanceJobs(
-        nextUtcDayStart(deps.now()),
-      );
-      return;
-    }
-    if (job.type === "fetch_page") {
-      await deps.ingestionService.ingestPage(
-        requirePayloadUrl(job),
-        job.id,
-      );
-      return;
-    }
-    if (job.type === "cleanup_payloads") {
-      await deps.ingestionService.cleanupExpiredPayloads();
-      await deps.scheduler.ensureMaintenanceJobs(
-        nextUtcDayStart(deps.now()),
-      );
-      return;
-    }
-    throw new TerminalWorkerError(
-      "worker_job_type_invalid",
-      "Translation jobs cannot run on the ingestion worker",
-    );
-  }
-
-  async function runOnce(): Promise<WorkerResult> {
-    const claimedAt = deps.now();
-    const job = await deps.jobRepository.claimNext({
-      queue: "ingestion",
-      workerId: deps.workerId,
-      now: claimedAt,
-      leaseMs: deps.leaseMs,
-    });
-    if (!job) return "idle";
-
-    let leaseOwned = true;
-    let renewalPromise: Promise<void> | undefined;
-    let intervalCleared = false;
-    const intervalHandle = setIntervalImpl(() => {
-      if (!leaseOwned || renewalPromise) return;
-      renewalPromise = (async () => {
-        try {
-          leaseOwned = await deps.jobRepository.renewLease(
-            job.id,
-            deps.workerId,
-            new Date(deps.now().getTime() + deps.leaseMs),
+  const runner = createLeasedJobRunner({
+    repository: deps.jobRepository,
+    queue: "ingestion",
+    workerId: deps.workerId,
+    leaseMs: deps.leaseMs,
+    heartbeatMs: Math.max(1, Math.floor(deps.leaseMs / 3)),
+    now: deps.now,
+    setIntervalImpl: deps.setIntervalImpl,
+    clearIntervalImpl: deps.clearIntervalImpl,
+    async execute(job): Promise<JobExecutionResult> {
+      try {
+        if (job.type === "discover_sitemap") {
+          await deps.ingestionService.refreshRobotsPolicy();
+          await deps.ingestionService.discoverPages();
+          await deps.scheduler.scheduleDailyPageRefreshes(deps.now());
+          await deps.scheduler.ensureMaintenanceJobs(
+            nextUtcDayStart(deps.now()),
           );
-        } catch {
-          leaseOwned = false;
-        } finally {
-          renewalPromise = undefined;
+          return { outcome: "completed" };
         }
-      })();
-      return renewalPromise;
-    }, Math.max(1, Math.floor(deps.leaseMs / 3)));
-
-    async function stopRenewal(): Promise<void> {
-      if (!intervalCleared) {
-        clearIntervalImpl(intervalHandle);
-        intervalCleared = true;
+        if (job.type === "fetch_page") {
+          await deps.ingestionService.ingestPage(
+            requirePayloadUrl(job),
+            job.id,
+          );
+          return { outcome: "completed" };
+        }
+        if (job.type === "cleanup_payloads") {
+          await deps.ingestionService.cleanupExpiredPayloads();
+          await deps.scheduler.ensureMaintenanceJobs(
+            nextUtcDayStart(deps.now()),
+          );
+          return { outcome: "completed" };
+        }
+        throw new TerminalWorkerError(
+          "worker_job_type_invalid",
+          "Translation jobs cannot run on the ingestion worker",
+        );
+      } catch (error) {
+        const details = errorDetails(error);
+        if (error instanceof TerminalWorkerError) {
+          return { outcome: "failed", ...details };
+        }
+        const baseDelay = retryDelay(job.attempts);
+        return {
+          outcome: "retry",
+          ...details,
+          delayMs:
+            baseDelay + Math.max(0, deps.jitter(baseDelay)),
+        };
       }
-      await renewalPromise;
-    }
-
-    try {
-      await dispatch(job);
-      await stopRenewal();
-      if (!leaseOwned) return "lease_lost";
-      await deps.jobRepository.complete(job.id, deps.workerId, deps.now());
-      return "worked";
-    } catch (error) {
-      await stopRenewal();
-      if (!leaseOwned) return "lease_lost";
-
-      const details = errorDetails(error);
-      if (error instanceof TerminalWorkerError) {
-        await deps.jobRepository.fail({
-          jobId: job.id,
-          workerId: deps.workerId,
-          now: deps.now(),
-          errorCode: details.code,
-          errorMessage: details.message,
-        });
-        return "worked";
-      }
-
-      const baseDelay = retryDelay(job.attempts);
-      const now = deps.now();
-      await deps.jobRepository.retryOrFail({
-        jobId: job.id,
-        workerId: deps.workerId,
-        now,
-        runAt: new Date(
-          now.getTime() + baseDelay + Math.max(0, deps.jitter(baseDelay)),
-        ),
-        errorCode: details.code,
-        errorMessage: details.message,
-      });
-      return "worked";
-    } finally {
-      await stopRenewal();
-    }
-  }
+    },
+  });
 
   return {
-    runOnce,
+    runOnce: runner.runOnce,
     async run(signal?: AbortSignal): Promise<void> {
       while (!signal?.aborted) {
-        const result = await runOnce();
+        const result = await runner.runOnce(signal);
+        if (result === "aborted") return;
         if (result === "idle" && !signal?.aborted) {
           await deps.sleep(deps.pollIntervalMs);
         }

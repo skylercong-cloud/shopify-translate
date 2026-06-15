@@ -526,4 +526,38 @@ describe("translation service", () => {
       }),
     ).resolves.toEqual({ outcome: "stale" });
   });
+
+  it("propagates shutdown abort after settling the started request", async () => {
+    const input = options();
+    vi.mocked(input.clients.deepseek.translate).mockImplementation(
+      async (_request, signal?: AbortSignal) =>
+        await new Promise((_resolve, reject) => {
+          signal?.addEventListener("abort", () => {
+            reject(new DOMException("aborted", "AbortError"));
+          });
+        }),
+    );
+    const controller = new AbortController();
+    const running = createTranslationService(input).run(
+      {
+        jobId: "job-id",
+        blockId: "block-id",
+      },
+      controller.signal,
+    );
+    await vi.waitFor(() =>
+      expect(input.clients.deepseek.translate).toHaveBeenCalledOnce(),
+    );
+
+    controller.abort();
+
+    await expect(running).rejects.toMatchObject({ name: "AbortError" });
+    expect(input.clients.qwen?.translate).not.toHaveBeenCalled();
+    expect(input.tokenBudget.settle).toHaveBeenCalledWith({
+      reservationId: "reservation-id",
+      reportedInputTokens: null,
+      reportedOutputTokens: null,
+      now,
+    });
+  });
 });

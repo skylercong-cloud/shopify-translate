@@ -21,7 +21,10 @@ export type EnqueueJobResult = {
   action: "created" | "deduplicated" | "promoted";
 };
 
-export type ClaimedJob = JobRecord & {
+export type ClaimedJob<
+  TPayload extends Record<string, unknown> = Record<string, unknown>,
+> = Omit<JobRecord, "payload"> & {
+  payload: TPayload;
   leaseOwner: string;
   leaseExpiresAt: Date;
 };

@@ -266,4 +266,63 @@ describe("job repository", () => {
       lastErrorCode: "worker_job_type_invalid",
     });
   });
+
+  it("defers an owned translation job without consuming an attempt", async () => {
+    const now = new Date("2026-06-12T00:00:00Z");
+    const runAt = new Date("2026-06-12T16:00:00Z");
+    const created = await repository.enqueue(
+      jobInput("deferred", {
+        queue: "translation",
+        type: "translate_block",
+        payload: {
+          blockId: randomUUID(),
+          contentFingerprint: "fingerprint",
+        },
+        runAt: now,
+        maxAttempts: 1,
+      }),
+    );
+    await repository.claimNext({
+      queue: "translation",
+      workerId: "translation-worker",
+      now,
+      leaseMs: 120_000,
+    });
+
+    await expect(
+      repository.defer({
+        jobId: created.job.id,
+        workerId: "wrong-worker",
+        runAt,
+        reasonCode: "budget_exhausted",
+        reasonMessage: "Daily translation budget is exhausted",
+        now,
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      repository.defer({
+        jobId: created.job.id,
+        workerId: "translation-worker",
+        runAt,
+        reasonCode: "budget_exhausted",
+        reasonMessage: "Daily translation budget is exhausted",
+        now,
+      }),
+    ).resolves.toBe(true);
+
+    const stored = await db.query.jobs.findFirst({
+      where: eq(jobs.id, created.job.id),
+    });
+    expect(stored).toMatchObject({
+      status: "queued",
+      attempts: 0,
+      maxAttempts: 1,
+      runAt,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      completedAt: null,
+      lastErrorCode: "budget_exhausted",
+      lastErrorMessage: "Daily translation budget is exhausted",
+    });
+  });
 });

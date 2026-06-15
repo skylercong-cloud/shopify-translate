@@ -26,6 +26,7 @@ export type TranslationProviderClient = {
   serializeRequest(request: TranslationProviderRequest): string;
   translate(
     request: TranslationProviderRequest,
+    signal?: AbortSignal,
   ): Promise<TranslationProviderResult>;
 };
 
@@ -144,6 +145,10 @@ function requestBody(
   });
 }
 
+function abortError(): DOMException {
+  return new DOMException("Translation request aborted", "AbortError");
+}
+
 export function createOpenAiCompatibleProviderClient(options: {
   provider: TranslationProvider;
   baseUrl: string;
@@ -179,9 +184,17 @@ export function createOpenAiCompatibleProviderClient(options: {
       return requestBody(options.provider, request);
     },
 
-    async translate(request) {
+    async translate(request, signal) {
+      if (signal?.aborted) throw abortError();
+
       const serializedRequest = requestBody(options.provider, request);
       const controller = new AbortController();
+      let externallyAborted = false;
+      const abortRequest = () => {
+        externallyAborted = true;
+        controller.abort();
+      };
+      signal?.addEventListener("abort", abortRequest, { once: true });
       const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
 
       try {
@@ -238,6 +251,7 @@ export function createOpenAiCompatibleProviderClient(options: {
         };
       } catch (error) {
         if (error instanceof ProviderCallError) throw error;
+        if (externallyAborted) throw abortError();
         if (controller.signal.aborted) {
           throw new ProviderCallError(
             "transient_error",
@@ -252,6 +266,7 @@ export function createOpenAiCompatibleProviderClient(options: {
         );
       } finally {
         clearTimeout(timeout);
+        signal?.removeEventListener("abort", abortRequest);
       }
     },
   };

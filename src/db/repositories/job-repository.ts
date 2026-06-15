@@ -132,7 +132,7 @@ export function createJobRepository(db: Database) {
   }
 
   async function claimNext(input: {
-    queue: "ingestion";
+    queue: "ingestion" | "translation";
     workerId: string;
     now: Date;
     leaseMs: number;
@@ -335,6 +335,42 @@ export function createJobRepository(db: Database) {
     }
   }
 
+  async function defer(input: {
+    jobId: string;
+    workerId: string;
+    runAt: Date;
+    reasonCode: string;
+    reasonMessage: string;
+    now: Date;
+  }): Promise<boolean> {
+    const deferred = await db
+      .update(jobs)
+      .set({
+        status: "queued",
+        attempts: sql`greatest(${jobs.attempts} - 1, 0)`,
+        runAt: input.runAt,
+        leaseOwner: null,
+        leaseExpiresAt: null,
+        lastErrorCode: input.reasonCode,
+        lastErrorMessage: input.reasonMessage.slice(
+          0,
+          MAX_ERROR_MESSAGE_LENGTH,
+        ),
+        completedAt: null,
+        updatedAt: input.now,
+      })
+      .where(
+        and(
+          eq(jobs.id, input.jobId),
+          eq(jobs.status, "running"),
+          eq(jobs.leaseOwner, input.workerId),
+        ),
+      )
+      .returning({ id: jobs.id });
+
+    return deferred.length === 1;
+  }
+
   return {
     enqueue,
     claimNext,
@@ -342,5 +378,6 @@ export function createJobRepository(db: Database) {
     complete,
     retryOrFail,
     fail,
+    defer,
   };
 }
