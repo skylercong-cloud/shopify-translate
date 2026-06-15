@@ -33,7 +33,7 @@
 - Create: `src/db/schema/translation-config.ts`
 - Create: `src/db/schema/translation.ts`
 - Modify: `src/db/schema/index.ts`
-- Create: `tests/unit/db/translation-schema.test.ts`
+- Create: `tests/unit/translation-schema.test.ts`
 - Create: `tests/integration/translation-schema.test.ts`
 - Generate: `drizzle/0002_protected_translation.sql`
 - Modify: `drizzle/meta/_journal.json`
@@ -41,7 +41,7 @@
 
 ### Step 1: Write failing schema contract tests
 
-Create `tests/unit/db/translation-schema.test.ts` and assert that the schema exports:
+Create `tests/unit/translation-schema.test.ts` and assert that the schema exports:
 
 ```ts
 expect(translationProviderEnum.enumValues).toEqual(["deepseek", "qwen"]);
@@ -76,7 +76,7 @@ Create `tests/integration/translation-schema.test.ts` and assert:
 Run:
 
 ```powershell
-corepack pnpm test -- tests/unit/db/translation-schema.test.ts
+corepack pnpm test -- tests/unit/translation-schema.test.ts
 ```
 
 Expected: FAIL because translation schema exports do not exist.
@@ -97,16 +97,14 @@ export const modelProviderConfigs = pgTable("model_provider_configs", {
   baseUrl: text("base_url").notNull(),
   modelId: text("model_id").notNull(),
   encryptedApiKey: text("encrypted_api_key").notNull(),
-  requestTimeoutMs: integer("request_timeout_ms").notNull().default(60_000),
-  maxInputBytes: integer("max_input_bytes").notNull().default(1_048_576),
-  maxOutputTokens: integer("max_output_tokens").notNull().default(4_096),
+  keyHint: text("key_hint"),
   enabled: boolean("enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 ```
 
-Add positive checks for numeric limits and base URL/model ID non-empty checks.
+Add non-empty checks for Base URL, model ID, and the encrypted API-key envelope.
 
 Add singleton `translation_settings` using a fixed boolean primary key:
 
@@ -114,18 +112,25 @@ Add singleton `translation_settings` using a fixed boolean primary key:
 {
   singleton: boolean("singleton").primaryKey().default(true),
   dailyTokenLimit: bigint("daily_token_limit", { mode: "number" }),
+  budgetTimeZone: text("budget_time_zone").notNull().default("Asia/Shanghai"),
+  requestTimeoutMs: integer("request_timeout_ms").notNull().default(60_000),
+  maxInputBytes: integer("max_input_bytes").notNull().default(1_048_576),
+  maxOutputTokens: integer("max_output_tokens").notNull().default(4_096),
+  workerConcurrency: integer("worker_concurrency").notNull().default(1),
   createdAt,
   updatedAt,
 }
 ```
 
-Add a check that `singleton = true` and `daily_token_limit > 0` when present.
+Add checks that `singleton = true`, the time zone is fixed to
+`Asia/Shanghai`, the numeric runtime limits are positive, and
+`daily_token_limit > 0` when present.
 
 Add immutable version tables:
 
 ```ts
-prompt_versions(id, version, system_prompt, user_prompt_template, active, created_at)
-glossary_versions(id, version, active, created_at)
+prompt_versions(id, version, system_prompt, user_prompt_template, content_fingerprint, active, created_at)
+glossary_versions(id, version, content_fingerprint, active, created_at)
 glossary_terms(id, glossary_version_id, source_term, normalized_term, created_at)
 ```
 
@@ -153,6 +158,7 @@ block_translations
   source_fingerprint text not null
   status translation_status not null default pending
   current_revision_id uuid nullable
+  review_reason text nullable
   last_error_code text nullable
   last_error_message text nullable
   updated_at timestamptz
@@ -195,6 +201,7 @@ token_reservations
   status token_reservation_status
   reserved_tokens bigint
   charged_tokens bigint default 0
+  expires_at timestamptz
   created_at timestamptz
   request_started_at timestamptz nullable
   settled_at timestamptz nullable
@@ -205,11 +212,16 @@ model_calls
   block_id uuid nullable fk content_blocks set null
   provider translation_provider
   model_id text
+  prompt_version_id uuid nullable
+  glossary_version_id uuid nullable
+  call_sequence integer
   status model_call_status
+  http_status integer nullable
   request_hash text
   response_hash text nullable
   input_tokens bigint nullable
   output_tokens bigint nullable
+  latency_ms integer nullable
   error_code text nullable
   error_message text nullable
   created_at timestamptz
@@ -261,7 +273,7 @@ $env:DATABASE_URL='postgres://app:app@127.0.0.1:5432/shopify_docs_test'
 $env:APP_ORIGIN='http://127.0.0.1:3000'
 $env:SESSION_DAYS='30'
 corepack pnpm db:migrate
-corepack pnpm test -- tests/unit/db/translation-schema.test.ts
+corepack pnpm test -- tests/unit/translation-schema.test.ts
 corepack pnpm test:integration -- tests/integration/translation-schema.test.ts
 ```
 
@@ -270,7 +282,7 @@ Expected: PASS.
 ### Step 6: Commit
 
 ```powershell
-git add src/db/schema tests/unit/db/translation-schema.test.ts tests/integration/translation-schema.test.ts drizzle
+git add src/db/schema tests/unit/translation-schema.test.ts tests/integration/translation-schema.test.ts drizzle
 git commit -m "feat: add translation persistence schema"
 ```
 
@@ -421,9 +433,7 @@ export type StoredProviderConfig = {
   baseUrl: string;
   modelId: string;
   encryptedApiKey: string;
-  requestTimeoutMs: number;
-  maxInputBytes: number;
-  maxOutputTokens: number;
+  keyHint: string | null;
   enabled: boolean;
 };
 
@@ -1064,7 +1074,7 @@ Cover this exact precedence:
 Also cover:
 
 - code blocks return `skipped`;
-- a request above provider input limit marks `oversized`;
+- a request above the configured global input limit marks `oversized`;
 - a strict reservation above the entire daily limit marks `oversized`;
 - insufficient remaining budget returns `deferred` with reset time;
 - DeepSeek transient errors receive initial call plus two retries;
@@ -1104,11 +1114,11 @@ Before each provider call:
 
 1. serialize the exact request body;
 2. reserve strict budget;
-3. insert `model_calls` with request SHA-256 and start status;
-4. mark reservation `request_started`;
-5. invoke provider;
-6. store only response SHA-256 and bounded metadata;
-7. settle usage in `finally`.
+3. mark the reservation `request_started`;
+4. invoke the provider;
+5. insert the final `model_calls` audit row with request SHA-256, outcome,
+   response SHA-256, and bounded metadata;
+6. settle usage in `finally`.
 
 Never persist API keys, authorization headers, raw prompts, or raw model responses in `model_calls`.
 
@@ -1402,8 +1412,7 @@ git commit -m "feat: administer translation revisions"
 **Files:**
 - Create: `tests/fixtures/model-server.ts`
 - Create: `tests/integration/translation-pipeline.test.ts`
-- Modify: `tests/helpers/database.ts`
-- Modify: `tests/helpers/setup.ts`
+- Modify: `tests/setup.ts`
 
 ### Step 1: Create a bounded local provider fixture
 

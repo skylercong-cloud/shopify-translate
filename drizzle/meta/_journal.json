@@ -15,6 +15,13 @@
       "when": 1781271827425,
       "tag": "0001_content_ingestion",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781486534845,
+      "tag": "0002_protected_translation",
+      "breakpoints": true
     }
   ]
 }
