@@ -7,6 +7,7 @@ import { db } from "@/db/client";
 import { createIngestionRepository } from "@/db/repositories/ingestion-repository";
 import {
   blockChanges,
+  blockTranslations,
   contentBlocks,
   jobs,
   pageVersions,
@@ -217,6 +218,13 @@ describe("ingestion schema", () => {
     const translationJobs = await db.query.jobs.findMany({
       where: eq(jobs.queue, "translation"),
     });
+    const translationStates =
+      await db.query.blockTranslations.findMany({
+        where: inArray(
+          blockTranslations.blockId,
+          storedBlocks.map((block) => block.id),
+        ),
+      });
     const storedPage = await db.query.sourcePages.findFirst({
       where: eq(sourcePages.id, page.id),
     });
@@ -224,6 +232,10 @@ describe("ingestion schema", () => {
     expect(versionCount.value).toBe(1);
     expect(storedBlocks).toHaveLength(2);
     expect(translationJobs).toHaveLength(2);
+    expect(translationStates).toHaveLength(2);
+    expect(
+      translationStates.every((state) => state.status === "pending"),
+    ).toBe(true);
     expect(storedPage).toMatchObject({
       currentVersionId: expect.any(String),
       title: "Guide",

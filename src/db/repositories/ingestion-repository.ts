@@ -2,6 +2,7 @@ import {
   and,
   asc,
   eq,
+  inArray,
   isNull,
   lt,
   lte,
@@ -14,6 +15,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "@/db/schema";
 import {
   blockChanges,
+  blockTranslations,
   contentBlocks,
   fetchAttempts,
   jobs,
@@ -470,6 +472,117 @@ export function createIngestionRepository(
           });
         if (changeRows.length > 0) {
           await transaction.insert(blockChanges).values(changeRows);
+        }
+
+        const previousTranslationStates =
+          previousBlocks.length === 0
+            ? []
+            : await transaction
+                .select()
+                .from(blockTranslations)
+                .where(
+                  inArray(
+                    blockTranslations.blockId,
+                    previousBlocks.map((block) => block.id),
+                  ),
+                );
+        const previousStateByBlockId = new Map(
+          previousTranslationStates.map((state) => [
+            state.blockId,
+            state,
+          ]),
+        );
+        const previousIndexByCurrentIndex = new Map<number, number>();
+        for (const change of effectiveDiff.changes) {
+          if (
+            change.kind === "modified" ||
+            change.kind === "moved"
+          ) {
+            previousIndexByCurrentIndex.set(
+              change.currentIndex,
+              change.previousIndex,
+            );
+          }
+        }
+        for (const currentBlock of insertedBlocks) {
+          if (previousIndexByCurrentIndex.has(currentBlock.ordinal)) {
+            continue;
+          }
+          const samePosition = previousBlocks[currentBlock.ordinal];
+          if (
+            samePosition?.type === currentBlock.type &&
+            samePosition.fingerprint === currentBlock.fingerprint
+          ) {
+            previousIndexByCurrentIndex.set(
+              currentBlock.ordinal,
+              currentBlock.ordinal,
+            );
+          }
+        }
+
+        const translationStates = insertedBlocks
+          .filter((block) => block.translatable)
+          .map((block) => {
+            const previousIndex = previousIndexByCurrentIndex.get(
+              block.ordinal,
+            );
+            const previousBlock =
+              previousIndex === undefined
+                ? undefined
+                : previousBlocks[previousIndex];
+            const previousState = previousBlock
+              ? previousStateByBlockId.get(previousBlock.id)
+              : undefined;
+            const sourceChanged =
+              previousState !== undefined &&
+              previousState.sourceFingerprint !== block.fingerprint;
+            const hasManualHistory =
+              previousState?.status === "manually_corrected" ||
+              previousState?.status === "review_required";
+
+            return {
+              blockId: block.id,
+              sourceFingerprint: block.fingerprint,
+              status: previousState
+                ? sourceChanged
+                  ? hasManualHistory
+                    ? ("review_required" as const)
+                    : ("pending" as const)
+                  : previousState.status
+                : ("pending" as const),
+              currentRevisionId: previousState?.currentRevisionId ?? null,
+              reviewReason:
+                sourceChanged && hasManualHistory
+                  ? "source_changed_after_manual_correction"
+                  : sourceChanged
+                    ? null
+                    : previousState?.reviewReason ?? null,
+              lastErrorCode: sourceChanged
+                ? null
+                : previousState?.lastErrorCode ?? null,
+              lastErrorMessage: sourceChanged
+                ? null
+                : previousState?.lastErrorMessage ?? null,
+              createdAt: input.fetchedAt,
+              updatedAt: input.fetchedAt,
+            };
+          });
+        if (translationStates.length > 0) {
+          await transaction
+            .insert(blockTranslations)
+            .values(translationStates)
+            .onConflictDoUpdate({
+              target: blockTranslations.blockId,
+              set: {
+                sourceFingerprint: sql`excluded.source_fingerprint`,
+                status: sql`excluded.status`,
+                currentRevisionId: sql`excluded.current_revision_id`,
+                reviewReason: sql`excluded.review_reason`,
+                lastErrorCode: sql`excluded.last_error_code`,
+                lastErrorMessage: sql`excluded.last_error_message`,
+                updatedAt: input.fetchedAt,
+              },
+            });
         }
 
         const translationRows: Array<typeof jobs.$inferInsert> =
