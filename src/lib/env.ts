@@ -39,6 +39,7 @@ const envSchema = z
       .positive()
       .max(MAXIMUM_SESSION_DAYS)
       .default(30),
+    MODEL_KEY_ENCRYPTION_KEY: z.string().optional(),
     SOURCE_REQUEST_CONCURRENCY: z.coerce
       .number()
       .int()

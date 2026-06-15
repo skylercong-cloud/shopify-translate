@@ -293,7 +293,7 @@ git commit -m "feat: add translation persistence schema"
 **Files:**
 - Create: `src/modules/translation/encryption.ts`
 - Create: `src/modules/translation/runtime-config.ts`
-- Modify: `src/config/env.ts`
+- Modify: `src/lib/env.ts`
 - Create: `tests/unit/translation/encryption.test.ts`
 - Create: `tests/unit/translation/runtime-config.test.ts`
 
@@ -349,7 +349,7 @@ Rules:
 
 ### Step 3: Add optional environment input and scoped requirement
 
-Modify the global environment schema so web and ingestion processes may start without model credentials:
+Modify `src/lib/env.ts` so web and ingestion processes may start without model credentials:
 
 ```ts
 MODEL_KEY_ENCRYPTION_KEY: z.string().optional()
@@ -385,7 +385,7 @@ Expected: PASS.
 ### Step 5: Commit
 
 ```powershell
-git add src/config/env.ts src/modules/translation tests/unit/translation
+git add src/lib/env.ts src/modules/translation tests/unit/translation
 git commit -m "feat: protect model provider credentials"
 ```
 
