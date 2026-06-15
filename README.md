@@ -1,6 +1,6 @@
 # Shopify.dev 中文阅读代理
 
-面向个人使用的 Shopify 开发文档中文阅读工具。当前 Phase 2 已完成单用户访问控制，以及 Shopify.dev 英文文档的发现、结构化采集、版本保存和每日增量检查。
+面向个人使用的 Shopify 开发文档中文阅读工具。当前已完成单用户访问控制、Shopify.dev 英文文档采集，以及受保护的后台 AI 翻译流水线。
 
 ## 本地环境
 
@@ -47,6 +47,11 @@
    corepack pnpm worker
    ```
 
+7. 配置模型后，启动持久化翻译 Worker：
+   ```powershell
+   corepack pnpm translation-worker
+   ```
+
 默认访问地址为 `http://127.0.0.1:3000`。密码哈希保存在 PostgreSQL 中；浏览器只保存 HttpOnly 会话 cookie，数据库仅保存会话 token 的 SHA-256 哈希。
 
 ## 内容采集
@@ -54,7 +59,7 @@
 - 采集范围为 `https://shopify.dev/docs` 和 `/docs/**`，包括 `/docs/api/**`，不包括 Changelog。
 - Worker 每日刷新 Robots、Sitemap 和已收录页面，仅在内容变化时创建新版本和待翻译任务。
 - 页面优先请求 Shopify.dev 的 `.txt` 表示；不可用时回退到 HTML。
-- Phase 2 只采集和版本化英文原文，不调用 AI，也不会在用户访问页面时实时翻译。
+- 翻译由后台 worker 按需处理并写入 PostgreSQL；用户访问页面时读取数据库，不实时调用 AI。
 - 自动化测试全部使用本地 Fixture HTTP 服务，不会抓取公开 Shopify.dev。
 
 采集参数通过环境变量配置：
@@ -122,6 +127,10 @@ corepack pnpm exec playwright install chromium
 - `GET /api/health/live`：应用进程存活
 - `GET /api/health/ready`：应用和 PostgreSQL 均可用
 
+## 翻译运维
+
+模型供应商、每日预算、Prompt、术语库、人工修正、重译、密钥轮换和备份流程见 [翻译运维手册](docs/translation-operations.md)。
+
 ## 当前范围
 
-Phase 2 尚未实现 AI 翻译、专业术语保护、中英文统一搜索、人工修订后台、14 天备份和生产部署。这些能力将在后续阶段接入。
+当前翻译后台已支持 DeepSeek 主用、Qwen 备用、专业术语保护、预算限额、人工修正、后台重译和本地自动化验证。独立中文阅读界面、中英文切换和统一搜索将在后续阶段接入。

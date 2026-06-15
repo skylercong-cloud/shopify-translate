@@ -270,6 +270,15 @@ export function createTranslationConfigService(
         settings,
       };
     },
+
+    rotateMasterKey(currentKey: Buffer, nextKey: Buffer) {
+      return repository.rotateProviderSecrets((provider) =>
+        encryptSecret(
+          decryptSecret(provider.encryptedApiKey, currentKey),
+          nextKey,
+        ),
+      );
+    },
   };
 }
 

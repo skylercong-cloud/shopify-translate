@@ -35,6 +35,11 @@ async function main() {
         message: `${provider} API key:`,
         mask: "*",
       }),
+    promptNewMasterKey: () =>
+      password({
+        message: "New MODEL_KEY_ENCRYPTION_KEY:",
+        mask: "*",
+      }),
     readTextFile: (path) => readFile(path, "utf8"),
     writeOutput: (output) => console.log(output),
   });

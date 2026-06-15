@@ -95,6 +95,7 @@ function createRepository(
     getActivePrompt: vi.fn().mockResolvedValue(prompt()),
     createAndActivateGlossary: vi.fn(),
     getActiveGlossary: vi.fn().mockResolvedValue(glossary()),
+    rotateProviderSecrets: vi.fn().mockResolvedValue(0),
     ...overrides,
   };
 }

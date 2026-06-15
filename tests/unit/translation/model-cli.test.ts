@@ -4,6 +4,7 @@ import type { TranslationConfigService } from "@/modules/translation/config-serv
 import { runModelCli } from "@/modules/translation/model-cli";
 
 const masterKey = Buffer.alloc(32, 17);
+const nextMasterKey = Buffer.alloc(32, 23);
 
 function createService(
   overrides: Partial<TranslationConfigService> = {},
@@ -23,6 +24,7 @@ function createService(
     activatePrompt: vi.fn(),
     activateGlossary: vi.fn(),
     loadWorkerReadiness: vi.fn(),
+    rotateMasterKey: vi.fn().mockResolvedValue(0),
     ...overrides,
   };
 }
@@ -45,6 +47,9 @@ function createDependencies(
     },
     getMasterKey: vi.fn(() => masterKey),
     promptApiKey: vi.fn().mockResolvedValue("sk-secret"),
+    promptNewMasterKey: vi
+      .fn()
+      .mockResolvedValue(nextMasterKey.toString("base64")),
     readTextFile: vi.fn(),
     writeOutput: vi.fn(),
     ...overrides,
@@ -394,5 +399,42 @@ describe("model CLI", () => {
     expect(
       dependencies.adminService.enqueueRetranslation,
     ).not.toHaveBeenCalled();
+  });
+
+  it("rotates provider keys using a securely prompted new master key", async () => {
+    const rotateMasterKey = vi.fn().mockResolvedValue(2);
+    const service = {
+      ...createService(),
+      rotateMasterKey,
+    } as TranslationConfigService & {
+      rotateMasterKey(
+        currentKey: Buffer,
+        newKey: Buffer,
+      ): Promise<number>;
+    };
+    const dependencies = {
+      ...createDependencies(service),
+      promptNewMasterKey: vi
+        .fn()
+        .mockResolvedValue(nextMasterKey.toString("base64")),
+    };
+
+    await runModelCli(["key", "rotate"], dependencies);
+
+    expect(dependencies.getMasterKey).toHaveBeenCalledOnce();
+    expect(dependencies.promptNewMasterKey).toHaveBeenCalledOnce();
+    expect(
+      vi.mocked(dependencies.getMasterKey).mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      vi.mocked(dependencies.promptNewMasterKey).mock
+        .invocationCallOrder[0],
+    );
+    expect(rotateMasterKey).toHaveBeenCalledWith(
+      masterKey,
+      nextMasterKey,
+    );
+    expect(dependencies.writeOutput).toHaveBeenCalledWith(
+      "Rotated provider keys: 2.",
+    );
   });
 });

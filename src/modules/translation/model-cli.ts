@@ -1,4 +1,5 @@
 import type { TranslationConfigService } from "./config-service";
+import { decodeMasterKey } from "./encryption";
 import type { TranslationAdminService } from "./translation-admin-service";
 
 type ModelCliDependencies = {
@@ -6,6 +7,7 @@ type ModelCliDependencies = {
   adminService: TranslationAdminService;
   getMasterKey(): Buffer;
   promptApiKey(provider: "deepseek" | "qwen"): Promise<string>;
+  promptNewMasterKey(): Promise<string>;
   readTextFile(path: string): Promise<string>;
   writeOutput(output: string): void;
 };
@@ -18,6 +20,7 @@ const USAGE = `Usage:
   pnpm model prompt activate --system-file <path> --user-file <path>
   pnpm model glossary activate --file <path>
   pnpm model readiness
+  pnpm model key rotate
   pnpm model correction add --block-id <uuid> --file <path> [--scope global|block]
   pnpm model correction history --block-id <uuid>
   pnpm model retranslate --block-id <uuid>
@@ -272,6 +275,23 @@ export async function runModelCli(
     dependencies.writeOutput(
       `Glossary version ${activated.version} activated.`,
     );
+    return;
+  }
+
+  if (
+    group === "key" &&
+    command === "rotate" &&
+    subject === undefined
+  ) {
+    const currentKey = dependencies.getMasterKey();
+    const nextKey = decodeMasterKey(
+      await dependencies.promptNewMasterKey(),
+    );
+    const rotated = await dependencies.service.rotateMasterKey(
+      currentKey,
+      nextKey,
+    );
+    dependencies.writeOutput(`Rotated provider keys: ${rotated}.`);
     return;
   }
 

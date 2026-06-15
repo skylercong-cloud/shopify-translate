@@ -83,6 +83,9 @@ export interface TranslationConfigRepository {
     input: GlossaryVersionInput,
   ): Promise<StoredGlossaryVersion>;
   getActiveGlossary(): Promise<StoredGlossaryVersion | null>;
+  rotateProviderSecrets(
+    rotate: (provider: StoredProviderConfig) => string,
+  ): Promise<number>;
 }
 
 function toRuntimeSettings(
@@ -284,6 +287,33 @@ export function createTranslationConfigRepository(
         ...stored,
         terms: await getGlossaryTerms(stored.id),
       };
+    },
+
+    rotateProviderSecrets(rotate) {
+      return db.transaction(async (transaction) => {
+        const providers = await transaction
+          .select()
+          .from(modelProviderConfigs)
+          .orderBy(asc(modelProviderConfigs.provider))
+          .for("update");
+        const rotated = providers.map((provider) => ({
+          provider,
+          encryptedApiKey: rotate(provider),
+        }));
+        const updatedAt = new Date();
+
+        for (const item of rotated) {
+          await transaction
+            .update(modelProviderConfigs)
+            .set({
+              encryptedApiKey: item.encryptedApiKey,
+              updatedAt,
+            })
+            .where(eq(modelProviderConfigs.id, item.provider.id));
+        }
+
+        return rotated.length;
+      });
     },
   };
 }

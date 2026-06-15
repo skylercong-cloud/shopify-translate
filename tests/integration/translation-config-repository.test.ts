@@ -11,8 +11,11 @@ import {
   translationSettings,
 } from "@/db/schema";
 import { getEnv } from "@/lib/env";
+import { createTranslationConfigService } from "@/modules/translation/config-service";
+import { decryptSecret } from "@/modules/translation/encryption";
 
 const repository = createTranslationConfigRepository(db);
+const service = createTranslationConfigService(repository);
 
 beforeAll(() => {
   const env = getEnv();
@@ -163,5 +166,66 @@ describe("translation configuration repository", () => {
       expect.objectContaining({ id: first.id, active: false }),
       expect.objectContaining({ id: second.id, active: true }),
     ]);
+  });
+
+  it("rotates all provider API keys atomically", async () => {
+    const currentKey = Buffer.alloc(32, 31);
+    const nextKey = Buffer.alloc(32, 32);
+    await service.configureProvider(
+      {
+        provider: "deepseek",
+        modelId: "deepseek-chat",
+        apiKey: "deepseek-secret",
+      },
+      currentKey,
+    );
+    await service.configureProvider(
+      {
+        provider: "qwen",
+        modelId: "qwen-plus",
+        apiKey: "qwen-secret",
+      },
+      currentKey,
+    );
+    const before = await repository.listProviders();
+    const rotationService = service as typeof service & {
+      rotateMasterKey(
+        oldKey: Buffer,
+        newKey: Buffer,
+      ): Promise<number>;
+    };
+
+    await expect(
+      rotationService.rotateMasterKey(Buffer.alloc(32, 99), nextKey),
+    ).rejects.toThrow("Encrypted secret is invalid");
+    await expect(repository.listProviders()).resolves.toEqual(before);
+
+    await expect(
+      rotationService.rotateMasterKey(currentKey, nextKey),
+    ).resolves.toBe(2);
+
+    const rotated = await repository.listProviders();
+    expect(rotated.map((provider) => provider.encryptedApiKey)).not.toEqual(
+      before.map((provider) => provider.encryptedApiKey),
+    );
+    expect(
+      decryptSecret(
+        rotated.find((provider) => provider.provider === "deepseek")!
+          .encryptedApiKey,
+        nextKey,
+      ),
+    ).toBe("deepseek-secret");
+    expect(
+      decryptSecret(
+        rotated.find((provider) => provider.provider === "qwen")!
+          .encryptedApiKey,
+        nextKey,
+      ),
+    ).toBe("qwen-secret");
+    for (const provider of rotated) {
+      expect(() =>
+        decryptSecret(provider.encryptedApiKey, currentKey),
+      ).toThrow("Encrypted secret is invalid");
+    }
   });
 });
