@@ -171,6 +171,31 @@ h1 {
   font-weight: 700;
 }
 
+.reader-language-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #dbe5df;
+  border-radius: 999px;
+  background: #f6f6f7;
+}
+
+.reader-language-switch button {
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  color: #5c5f62;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.reader-language-switch button[aria-pressed="true"] {
+  color: white;
+  background: #0b6b4f;
+}
+
 .reader-document__body {
   padding: 16px 48px 48px;
 }

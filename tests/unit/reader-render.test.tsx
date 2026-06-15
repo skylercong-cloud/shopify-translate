@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { ReaderDocument } from "@/app/(app)/docs/[...slug]/reader-document";
 import {
@@ -9,6 +9,10 @@ import {
 import type { ReaderBlock, ReaderPage } from "@/modules/reader/types";
 
 const now = new Date("2026-06-16T00:00:00.000Z");
+
+afterEach(() => {
+  cleanup();
+});
 
 function block(
   overrides: Partial<ReaderBlock> = {},
@@ -120,5 +124,35 @@ describe("reader rendering", () => {
     expect(screen.getByRole("link", { name: "Official source" }))
       .toHaveAttribute("href", "https://shopify.dev/docs/apps/build");
     expect(screen.getByText("shopify app dev")).toBeInTheDocument();
+  });
+
+  it("switches languages without changing the document URL", () => {
+    window.history.pushState(null, "", "/docs/apps/build");
+    const beforePath = window.location.pathname;
+    const paragraph = block({
+      id: "paragraph-id",
+      sourceText: "Use Shopify CLI.",
+      translatedText: "Chinese: Use Shopify CLI.",
+      translationStatus: "ai_translated",
+      currentRevisionSource: "ai",
+    });
+    const code = block({
+      id: "code-id",
+      ordinal: 1,
+      type: "code",
+      sourceText: "shopify app dev",
+      payload: { language: "sh" },
+      translatable: false,
+    });
+
+    render(<ReaderDocument page={page([paragraph, code])} />);
+
+    expect(screen.getByText("Chinese: Use Shopify CLI.")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "English" }));
+
+    expect(window.location.pathname).toBe(beforePath);
+    expect(screen.getByText("Use Shopify CLI.")).toBeVisible();
+    expect(screen.getByText("shopify app dev")).toBeVisible();
   });
 });

@@ -4,6 +4,7 @@ import {
   displayTextForLanguage,
   statusLabel,
 } from "@/modules/reader/render-block";
+import { LanguageSwitch } from "./language-switch";
 
 function blockKey(block: ReaderBlock): string {
   return `${block.ordinal}:${block.id}`;
@@ -17,8 +18,20 @@ function shouldRenderBlock(block: ReaderBlock, page: ReaderPage): boolean {
   );
 }
 
+function ReaderText({ block }: { block: ReaderBlock }) {
+  return (
+    <>
+      <span data-reader-language="zh">
+        {displayTextForLanguage(block, "zh")}
+      </span>
+      <span data-reader-language="en" hidden>
+        {displayTextForLanguage(block, "en")}
+      </span>
+    </>
+  );
+}
+
 function ReaderBlockView({ block }: { block: ReaderBlock }) {
-  const text = displayTextForLanguage(block, "zh");
   const status = statusLabel(
     block.translationStatus,
     block.currentRevisionSource,
@@ -41,7 +54,9 @@ function ReaderBlockView({ block }: { block: ReaderBlock }) {
   if (block.type === "heading") {
     return (
       <section className="reader-block reader-block--heading">
-        <h2>{text}</h2>
+        <h2>
+          <ReaderText block={block} />
+        </h2>
       </section>
     );
   }
@@ -51,7 +66,9 @@ function ReaderBlockView({ block }: { block: ReaderBlock }) {
       <div className="reader-block__meta">
         <span>{status}</span>
       </div>
-      <p>{text}</p>
+      <p>
+        <ReaderText block={block} />
+      </p>
     </section>
   );
 }
@@ -60,6 +77,7 @@ export function ReaderDocument({ page }: { page: ReaderPage }) {
   const blocks = page.blocks.filter((block) =>
     shouldRenderBlock(block, page),
   );
+  const bodyId = `reader-body-${page.id}`;
 
   return (
     <article className="reader-document">
@@ -74,9 +92,14 @@ export function ReaderDocument({ page }: { page: ReaderPage }) {
             {page.summary.translatedCount} translated /{" "}
             {page.summary.blockCount} blocks
           </span>
+          <LanguageSwitch targetId={bodyId} />
         </div>
       </header>
-      <div className="reader-document__body">
+      <div
+        className="reader-document__body"
+        data-language="zh"
+        id={bodyId}
+      >
         {blocks.map((block) => (
           <ReaderBlockView block={block} key={blockKey(block)} />
         ))}
