@@ -51,7 +51,8 @@ describe("OpenAI-compatible translation provider", () => {
       }),
     ) as unknown as typeof fetch;
 
-    const result = await client("deepseek", fetchImpl).translate(request);
+    const providerClient = client("deepseek", fetchImpl);
+    const result = await providerClient.translate(request);
     const [url, init] = vi.mocked(fetchImpl).mock.calls[0];
     const body = JSON.parse(String(init?.body));
 
@@ -80,6 +81,9 @@ describe("OpenAI-compatible translation provider", () => {
       requestBody: JSON.stringify(body),
       responseBodyHash: expect.stringMatching(/^[a-f0-9]{64}$/),
     });
+    expect(providerClient.serializeRequest(request)).toBe(
+      result.requestBody,
+    );
   });
 
   it("uses the Qwen path without DeepSeek-only fields", async () => {

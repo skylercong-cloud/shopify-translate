@@ -23,6 +23,7 @@ export type TranslationProviderResult = {
 };
 
 export type TranslationProviderClient = {
+  serializeRequest(request: TranslationProviderRequest): string;
   translate(
     request: TranslationProviderRequest,
   ): Promise<TranslationProviderResult>;
@@ -174,6 +175,10 @@ export function createOpenAiCompatibleProviderClient(options: {
   const fetchImpl = options.fetchImpl ?? fetch;
 
   return {
+    serializeRequest(request) {
+      return requestBody(options.provider, request);
+    },
+
     async translate(request) {
       const serializedRequest = requestBody(options.provider, request);
       const controller = new AbortController();
