@@ -23,6 +23,9 @@ export default async function AppLayout({
         <Link href="/admin/review" aria-label="Translation review">
           V
         </Link>
+        <Link href="/admin/glossary" aria-label="Glossary versions">
+          G
+        </Link>
       </nav>
       <div className="app-main">
         <header className="app-header">

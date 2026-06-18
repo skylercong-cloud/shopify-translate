@@ -152,15 +152,18 @@ now prevent model calls when PostgreSQL writes are unavailable. Reader pages
 now expose compact per-block translation revision history for AI and manual
 outputs, and `/admin` now exposes recent glossary version history with active
 status and term counts. `/admin/review` now exposes a side-by-side translation
-review workbench with manual correction forms. Full per-term glossary CRUD/diff
-browsing, advanced word-level translation diffs, and provider-specific
-off-server backup copies remain pending for later Phase 5/6 increments.
+review workbench with manual correction forms. `/admin/glossary` now exposes
+full glossary version term lists and active-version added/removed diffs.
+Per-term edit controls, advanced word-level translation diffs, and
+provider-specific off-server backup copies remain pending for later Phase 5/6
+increments.
 
 Deliverables:
 
 - Provider, model, Prompt, and daily-budget settings.
 - Glossary CRUD with validation and conflict detection.
 - Glossary version history with active status and term counts.
+- Glossary version browser with active-version added/removed term diffs.
 - Translation editor with English diff and manual-review history.
 - Translation review workbench with side-by-side source/current translation panes.
 - Job, failure, Token usage, sync, database, and disk status views.
@@ -179,6 +182,7 @@ Exit criteria:
 - Disk/database failure stops new translation writes and surfaces an alert.
 - Recent glossary versions and term counts are visible in `/admin`.
 - `/admin/review` displays current source and translation side by side and can publish manual corrections.
+- `/admin/glossary` displays glossary versions, full terms, and diffs against the active glossary.
 
 ## Phase 6: Production Packaging And Mainland Deployment
 
