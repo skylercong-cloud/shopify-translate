@@ -57,6 +57,10 @@ describe("application scaffold configuration", () => {
     );
   });
 
+  it("exposes a database backup command", () => {
+    expect(packageJson.scripts.backup).toBe("tsx scripts/backup-database.ts");
+  });
+
   it("uses the stable JSX runtime required by Next.js 16 builds", () => {
     expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
   });
