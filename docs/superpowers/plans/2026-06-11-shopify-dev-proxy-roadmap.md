@@ -113,8 +113,10 @@ Exit criteria:
 
 ## Phase 4: Focused Reader And Unified Search
 
-Status: Phase 4A focused reader surface was implemented and verified on June 18,
-2026. Unified bilingual search remains pending for Phase 4B.
+Status: Phase 4A focused reader surface and the initial Phase 4B unified cached
+search were implemented and browser verified on June 18, 2026. Dedicated
+PostgreSQL full-text/trigram index optimization remains a follow-up after
+behavior is measured against a larger cached corpus.
 
 Deliverables:
 
