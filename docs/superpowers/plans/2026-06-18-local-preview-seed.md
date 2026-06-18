@@ -28,7 +28,7 @@
 - Create: `src/modules/preview/local-preview-seed.ts`
 - Create: `tests/unit/local-preview-seed.test.ts`
 
-- [ ] **Step 1: Write failing seed module tests**
+- [x] **Step 1: Write failing seed module tests**
 
 Create a unit test that calls `seedLocalPreview()` with fake repositories and asserts:
 - both demo pages are passed through `upsertDiscoveredPages()`;
@@ -37,7 +37,7 @@ Create a unit test that calls `seedLocalPreview()` with fake repositories and as
 - code block source such as `shopify app dev` is not translated;
 - the returned summary includes `/docs/apps/build` and `/docs/api/admin-graphql`.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -47,7 +47,7 @@ corepack pnpm test -- tests/unit/local-preview-seed.test.ts
 
 Expected: FAIL because `@/modules/preview/local-preview-seed` does not exist.
 
-- [ ] **Step 3: Implement preview data and seed workflow**
+- [x] **Step 3: Implement preview data and seed workflow**
 
 Implement:
 - `LOCAL_PREVIEW_PAGES` with two canonical Shopify.dev URLs and fixed Markdown bodies.
@@ -58,7 +58,7 @@ Implement:
 - Publish each page through `publishParsedPage()`.
 - Load inserted blocks and publish configured Chinese translations through `publishRevision()`.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run:
 
