@@ -165,7 +165,7 @@ in Task 1.
 - Modify: `src/modules/operations/types.ts`
 - Modify: `src/db/repositories/operations-repository.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Route test:
 - authenticated request with two active sessions deletes the other session but keeps the current token hash;
@@ -175,7 +175,7 @@ Operations repository test:
 - insert one admin user, two unexpired sessions, and one expired session;
 - assert `overview.security.activeSessionCount` is `2`.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -185,7 +185,7 @@ $env:NODE_ENV='test'; $env:DATABASE_URL='postgres://app:app@127.0.0.1:5432/shopi
 
 Expected: FAIL because the sessions route and `security` overview field do not exist.
 
-- [ ] **Step 3: Implement route and overview count**
+- [x] **Step 3: Implement route and overview count**
 
 Create `POST()` in `src/app/api/admin/sessions/route.ts` that:
 - reads the current session cookie;
@@ -204,7 +204,7 @@ security: {
 
 Load the count with a `count(*)::int` query over `sessions` joined to `users`, where `users.username = "admin"` and `sessions.expiresAt > now`.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run the same integration command, `corepack pnpm typecheck`, and `corepack pnpm lint`, then:
 
@@ -212,6 +212,13 @@ Run the same integration command, `corepack pnpm typecheck`, and `corepack pnpm 
 git add src/app/api/admin/sessions/route.ts src/modules/operations/types.ts src/db/repositories/operations-repository.ts tests/integration/admin-sessions-route.test.ts tests/integration/operations-repository.test.ts
 git commit -m "feat: revoke other admin sessions"
 ```
+
+Verification note: `corepack pnpm typecheck` first failed because
+`@/app/api/admin/sessions/route` and `overview.security` did not exist. After
+implementation, `corepack pnpm typecheck`, `corepack pnpm lint`, and
+`corepack pnpm test -- tests/unit/admin-overview.test.tsx tests/unit/operations-alerts.test.ts`
+passed. Targeted integration execution remains blocked by the current
+sandbox/usage-limit condition recorded in Task 1.
 
 ### Task 4: Admin Security UI
 

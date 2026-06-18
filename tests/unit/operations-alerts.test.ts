@@ -46,6 +46,9 @@ function overview(
       byQueueStatus: [],
       recentFailures: [],
     },
+    security: {
+      activeSessionCount: 1,
+    },
     ...overrides,
   };
 }

@@ -66,6 +66,9 @@ const overview: OperationsOverview = {
       },
     ],
   },
+  security: {
+    activeSessionCount: 2,
+  },
   alerts: [
     {
       severity: "critical",

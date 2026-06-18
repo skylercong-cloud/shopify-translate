@@ -1,4 +1,4 @@
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import type * as schema from "@/db/schema";
@@ -8,7 +8,9 @@ import {
   jobs,
   modelProviderConfigs,
   promptVersions,
+  sessions,
   translationSettings,
+  users,
 } from "@/db/schema";
 import type {
   OperationsGlossaryStatus,
@@ -79,6 +81,22 @@ export function createOperationsRepository(db: Database) {
     };
   }
 
+  async function loadSecurity(now = new Date()) {
+    const [row] = await db
+      .select({
+        activeSessionCount: sql<number>`count(*)::int`,
+      })
+      .from(sessions)
+      .innerJoin(users, eq(users.id, sessions.userId))
+      .where(
+        and(eq(users.username, "admin"), gt(sessions.expiresAt, now)),
+      );
+
+    return {
+      activeSessionCount: row?.activeSessionCount ?? 0,
+    };
+  }
+
   return {
     async loadOverview(): Promise<OperationsOverview> {
       const [
@@ -86,6 +104,7 @@ export function createOperationsRepository(db: Database) {
         providers,
         activePrompt,
         activeGlossary,
+        security,
         byQueueStatus,
         recentFailures,
       ] = await Promise.all([
@@ -112,6 +131,7 @@ export function createOperationsRepository(db: Database) {
           where: eq(promptVersions.active, true),
         }),
         loadActiveGlossary(),
+        loadSecurity(),
         db
           .select({
             queue: jobs.queue,
@@ -152,6 +172,7 @@ export function createOperationsRepository(db: Database) {
         providers,
         activePrompt: activePrompt ?? null,
         activeGlossary,
+        security,
         jobs: {
           byQueueStatus,
           recentFailures,

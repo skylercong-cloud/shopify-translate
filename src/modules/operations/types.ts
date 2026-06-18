@@ -75,6 +75,9 @@ export type OperationsOverview = {
   providers: OperationsProviderStatus[];
   activePrompt: OperationsPromptStatus | null;
   activeGlossary: OperationsGlossaryStatus | null;
+  security: {
+    activeSessionCount: number;
+  };
   jobs: {
     byQueueStatus: OperationsJobCount[];
     recentFailures: OperationsRecentFailure[];

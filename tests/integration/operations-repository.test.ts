@@ -16,13 +16,16 @@ import {
   jobs,
   modelProviderConfigs,
   promptVersions,
+  sessions,
   translationSettings,
+  users,
 } from "@/db/schema";
 import { getEnv } from "@/lib/env";
 
 const repository = createOperationsRepository(db);
 
 async function cleanDatabase() {
+  await db.delete(users);
   await db.delete(jobs);
   await db.delete(glossaryTerms);
   await db.delete(glossaryVersions);
@@ -139,6 +142,30 @@ describe("operations repository", () => {
         status: "running",
       },
     ]);
+    const [admin] = await db
+      .insert(users)
+      .values({ username: "admin", passwordHash: "hash" })
+      .returning();
+    await db.insert(sessions).values([
+      {
+        id: "00000000-0000-4000-8000-000000000011",
+        tokenHash: "a".repeat(64),
+        userId: admin.id,
+        expiresAt: new Date(Date.now() + 60_000),
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000012",
+        tokenHash: "b".repeat(64),
+        userId: admin.id,
+        expiresAt: new Date(Date.now() + 120_000),
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000013",
+        tokenHash: "c".repeat(64),
+        userId: admin.id,
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    ]);
 
     const overview = await repository.loadOverview();
 
@@ -189,6 +216,9 @@ describe("operations repository", () => {
         lastErrorCode: "provider_error",
       }),
     ]);
+    expect(overview.security).toEqual({
+      activeSessionCount: 2,
+    });
     expect(overview.alerts).toEqual([
       expect.objectContaining({
         severity: "critical",
