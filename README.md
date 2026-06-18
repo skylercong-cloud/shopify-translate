@@ -123,6 +123,19 @@ order by created_at desc
 limit 100;
 ```
 
+## 数据备份
+
+本地或服务器上可运行一次 PostgreSQL 备份：
+
+```powershell
+$env:BACKUP_DIR = ".\backups"
+$env:BACKUP_RETENTION_DAYS = "14"
+corepack pnpm backup
+```
+
+备份命令读取 `DATABASE_URL`，使用 `pg_dump -Fc` 写入
+`shopify-docs-YYYYMMDD-HHmmss.dump`，同时生成 `.sha256` 校验文件，并删除超过保留期的匹配备份文件。部署到私人服务器后，仍需要用 cron 或系统计划任务每天调用该命令，并把备份目录同步到服务器外部位置。
+
 ## 验证
 
 ```powershell

@@ -16,7 +16,7 @@
 - Create: `src/modules/operations/backup.ts`
 - Create: `tests/unit/operations-backup.test.ts`
 
-- [ ] **Step 1: Write failing unit tests**
+- [x] **Step 1: Write failing unit tests**
 
 Create tests that verify:
 - `runDatabaseBackup()` creates the backup directory;
@@ -25,7 +25,7 @@ Create tests that verify:
 - deletes only matching `shopify-docs-*.dump` and `shopify-docs-*.dump.sha256` files older than the retention window;
 - leaves unrelated files untouched.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -35,7 +35,7 @@ corepack pnpm test -- tests/unit/operations-backup.test.ts
 
 Expected: FAIL because `@/modules/operations/backup` does not exist.
 
-- [ ] **Step 3: Implement backup module**
+- [x] **Step 3: Implement backup module**
 
 Implement `runDatabaseBackup(options, dependencies)` with:
 - default command `pg_dump`;
@@ -45,7 +45,7 @@ Implement `runDatabaseBackup(options, dependencies)` with:
 - retention cutoff based on `now - retentionDays`;
 - deletion limited to backup filename patterns only.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run:
 
@@ -69,7 +69,7 @@ git commit -m "feat: add database backup runner"
 - Modify: `package.json`
 - Modify: `tests/unit/scaffold-config.test.ts`
 
-- [ ] **Step 1: Write failing script/config test**
+- [x] **Step 1: Write failing script/config test**
 
 Extend `tests/unit/scaffold-config.test.ts` to assert `package.json` exposes:
 
@@ -77,7 +77,7 @@ Extend `tests/unit/scaffold-config.test.ts` to assert `package.json` exposes:
 "backup": "tsx scripts/backup-database.ts"
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -87,7 +87,7 @@ corepack pnpm test -- tests/unit/scaffold-config.test.ts
 
 Expected: FAIL because the package script is absent.
 
-- [ ] **Step 3: Implement CLI and package script**
+- [x] **Step 3: Implement CLI and package script**
 
 Create `scripts/backup-database.ts`:
 - require `DATABASE_URL`;
@@ -97,7 +97,7 @@ Create `scripts/backup-database.ts`:
 - print backup path, checksum path, and deleted count;
 - set `process.exitCode = 1` on errors.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run:
 
@@ -121,15 +121,19 @@ git commit -m "feat: add backup command"
 - Modify: `docs/translation-operations.md`
 - Modify: `docs/superpowers/plans/2026-06-11-shopify-dev-proxy-roadmap.md`
 
-- [ ] **Step 1: Update docs**
+- [x] **Step 1: Update docs**
 
 Document `corepack pnpm backup`, `BACKUP_DIR`, `BACKUP_RETENTION_DAYS`, checksum files, and the remaining deployment cron step.
 
-- [ ] **Step 2: Run full verification**
+- [x] **Step 2: Run full verification**
 
 Run lint, typecheck, unit, integration, E2E seed, E2E if available, and production build.
 
-- [ ] **Step 3: Commit docs**
+Verification note:
+- Passed: `git diff --check`, `corepack pnpm lint`, `corepack pnpm typecheck`, `corepack pnpm test`, test database migration, `corepack pnpm test:integration`, `corepack pnpm test:e2e:seed`, and `corepack pnpm build`.
+- Browser E2E was not available in the current sandbox: `corepack pnpm test:e2e` failed before Playwright with `EPERM: operation not permitted, lstat 'C:\Users\admin'`. The sandbox-outside rerun request was rejected because the current Codex usage limit had been reached.
+
+- [x] **Step 3: Commit docs**
 
 ```powershell
 git add README.md docs/translation-operations.md docs/superpowers/plans/2026-06-11-shopify-dev-proxy-roadmap.md docs/superpowers/plans/2026-06-18-backup-automation.md

@@ -142,10 +142,12 @@ Exit criteria:
 Status: Initial Phase 5A operations overview, degraded-state alerts, provider
 settings/API-key replacement, Prompt snapshot activation, runtime numeric
 settings form, glossary snapshot activation, and reader-block manual
-correction forms were implemented on June 18, 2026. Full glossary CRUD/history
-browsing, richer translation diff/history browsing, password/session
-administration, and backup automation remain pending for later Phase 5
-increments.
+correction forms were implemented on June 18, 2026. A local `corepack pnpm
+backup` command now runs `pg_dump`, writes SHA-256 checksum files, and enforces
+14-day backup-file retention. Full glossary CRUD/history browsing, richer
+translation diff/history browsing, password/session administration, scheduled
+cron wiring, restore verification, and off-server backup copies remain pending
+for later Phase 5/6 increments.
 
 Deliverables:
 
@@ -154,8 +156,8 @@ Deliverables:
 - Translation editor with English diff and manual-review history.
 - Job, failure, Token usage, sync, database, and disk status views.
 - Session revocation and password-change screen.
-- Daily `pg_dump` backup with 14-day retention.
-- Backup checksums and restore verification.
+- Local `pg_dump` backup command with 14-day retention.
+- Backup checksums, scheduled execution, and restore verification.
 - Clear degraded-state banners and operational alerts.
 
 Exit criteria:

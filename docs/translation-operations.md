@@ -113,14 +113,18 @@
 15. 每日备份 PostgreSQL，并保留 14 天：
 
     ```powershell
-    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    pg_dump $env:DATABASE_URL -Fc -f "backups\shopify-docs-$stamp.dump"
-    Get-ChildItem .\backups\*.dump |
-      Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-14) } |
-      Remove-Item
+    $env:BACKUP_DIR = ".\backups"
+    $env:BACKUP_RETENTION_DAYS = "14"
+    corepack pnpm backup
     ```
 
-建议把备份目录同步到对象存储或另一台服务器，并定期演练恢复。
+    命令会读取当前 `DATABASE_URL`，调用 `pg_dump -Fc` 生成
+    `shopify-docs-YYYYMMDD-HHmmss.dump`，写入同名 `.sha256` 校验文件，
+    并且只删除超过保留期的 `shopify-docs-*.dump` 与
+    `shopify-docs-*.dump.sha256` 文件。`BACKUP_DIR` 默认是 `backups`，
+    `BACKUP_RETENTION_DAYS` 默认是 `14`。
+
+建议在服务器上用 cron 或系统计划任务每天执行一次 `corepack pnpm backup`。备份目录仍建议同步到对象存储或另一台服务器，并定期演练恢复；自动恢复校验会在部署运维阶段补齐。
 
 ## 常用 SQL
 
