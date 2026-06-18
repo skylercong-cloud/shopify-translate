@@ -156,7 +156,7 @@ git commit -m "docs: add production deployment runbook"
 **Files:**
 - Modify: `docs/superpowers/plans/2026-06-18-production-packaging.md`
 
-- [ ] **Step 1: Run focused verification**
+- [x] **Step 1: Run focused verification**
 
 Run:
 
@@ -169,7 +169,7 @@ corepack pnpm test
 
 Expected: PASS.
 
-- [ ] **Step 2: Run production build**
+- [x] **Step 2: Run production build**
 
 Run:
 
@@ -179,7 +179,7 @@ $env:NODE_ENV='production'; $env:DATABASE_URL='postgres://app:app@127.0.0.1:5432
 
 Expected: PASS. The known Next workspace-root warning is acceptable.
 
-- [ ] **Step 3: Optionally validate Docker Compose syntax if Docker is available**
+- [x] **Step 3: Optionally validate Docker Compose syntax if Docker is available**
 
 Run:
 
@@ -189,7 +189,7 @@ docker compose -f compose.production.yaml --env-file .env.production.example con
 
 Expected: PASS when Docker CLI is installed. If Docker is unavailable in this local environment, record that the syntax check was not run.
 
-- [ ] **Step 4: Commit verification notes**
+- [x] **Step 4: Commit verification notes**
 
 Run:
 
@@ -197,6 +197,15 @@ Run:
 git add docs/superpowers/plans/2026-06-18-production-packaging.md
 git commit -m "docs: record production packaging verification"
 ```
+
+## Verification Notes
+
+- Passed: `git diff --check`.
+- Passed: `corepack pnpm lint`.
+- Passed: `corepack pnpm typecheck`.
+- Passed: `corepack pnpm test` with 39 files and 276 tests.
+- Passed: production `corepack pnpm build`; the known Next workspace-root warning still appears because the parent checkout and worktree both have lockfiles.
+- Not run locally: `docker compose --env-file .env.production.example -f compose.production.yaml config`, because Docker CLI is not installed in this Windows environment.
 
 ## Self-Review
 
