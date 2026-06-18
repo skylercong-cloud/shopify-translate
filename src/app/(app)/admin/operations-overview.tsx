@@ -226,6 +226,70 @@ function RuntimeSettingsForm({
   );
 }
 
+function SecurityAdminCard({
+  security,
+}: {
+  security: OperationsOverview["security"];
+}) {
+  return (
+    <article className="operations-card">
+      <h2>安全设置</h2>
+      <p className="operations-help">
+        {formatNumber(security.activeSessionCount)} active sessions
+      </p>
+      <form
+        aria-label="登录密码表单"
+        action="/api/admin/password"
+        className="operations-settings-form"
+        method="post"
+      >
+        <label>
+          <span>Current password</span>
+          <input
+            autoComplete="current-password"
+            name="currentPassword"
+            required
+            type="password"
+          />
+        </label>
+        <label>
+          <span>New password</span>
+          <input
+            autoComplete="new-password"
+            name="newPassword"
+            required
+            type="password"
+          />
+        </label>
+        <label>
+          <span>Confirm new password</span>
+          <input
+            autoComplete="new-password"
+            name="confirmPassword"
+            required
+            type="password"
+          />
+        </label>
+        <p className="operations-help">
+          修改密码会撤销所有现有会话，提交成功后需要重新登录。
+        </p>
+        <button type="submit">更新登录密码</button>
+      </form>
+      <form
+        aria-label="会话管理表单"
+        action="/api/admin/sessions"
+        className="operations-settings-form"
+        method="post"
+      >
+        <p className="operations-help">
+          保留当前浏览器会话，撤销其他设备或浏览器上的登录状态。
+        </p>
+        <button type="submit">撤销其他会话</button>
+      </form>
+    </article>
+  );
+}
+
 function PromptAdminForm({
   prompt,
 }: {
@@ -335,6 +399,8 @@ export function OperationsOverviewPanel({
       </section>
 
       <div className="operations-grid">
+        <SecurityAdminCard security={overview.security} />
+
         <article className="operations-card">
           <h2>运行设置</h2>
           <dl className="operations-list">

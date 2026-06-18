@@ -226,7 +226,7 @@ sandbox/usage-limit condition recorded in Task 1.
 - Modify: `tests/unit/admin-overview.test.tsx`
 - Modify: `src/app/(app)/admin/operations-overview.tsx`
 
-- [ ] **Step 1: Write failing UI test**
+- [x] **Step 1: Write failing UI test**
 
 Extend the overview fixture with:
 
@@ -241,7 +241,7 @@ Assert that:
 - the active session count `2` is rendered;
 - the revoke button is rendered.
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -251,7 +251,7 @@ corepack pnpm test -- tests/unit/admin-overview.test.tsx
 
 Expected: FAIL because the security forms are not rendered.
 
-- [ ] **Step 3: Implement UI**
+- [x] **Step 3: Implement UI**
 
 Add a security card near the top of the operations grid:
 - render `overview.security.activeSessionCount`;
@@ -259,7 +259,7 @@ Add a security card near the top of the operations grid:
 - use `autoComplete="current-password"` for the current field and `autoComplete="new-password"` for both new-password fields;
 - render a session form with `action="/api/admin/sessions"` and method `post`.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run:
 
@@ -270,6 +270,11 @@ corepack pnpm lint
 git add src/app/\(app\)/admin/operations-overview.tsx tests/unit/admin-overview.test.tsx
 git commit -m "feat: render admin security controls"
 ```
+
+Verification note: `corepack pnpm test -- tests/unit/admin-overview.test.tsx`
+first failed because the security card was absent. After implementation,
+`corepack pnpm test -- tests/unit/admin-overview.test.tsx`,
+`corepack pnpm typecheck`, and `corepack pnpm lint` passed.
 
 ### Task 5: Documentation And Verification
 

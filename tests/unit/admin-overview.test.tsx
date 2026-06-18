@@ -186,6 +186,36 @@ describe("OperationsOverviewPanel", () => {
     expect(
       screen.getByRole("button", { name: "保存运行设置" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("2 active sessions")).toBeInTheDocument();
+    const passwordForm = screen.getByRole("form", {
+      name: "登录密码表单",
+    });
+    expect(passwordForm).toHaveAttribute("action", "/api/admin/password");
+    expect(
+      within(passwordForm).getByLabelText("Current password"),
+    ).toHaveAttribute("type", "password");
+    expect(
+      within(passwordForm).getByLabelText("Current password"),
+    ).toHaveDisplayValue("");
+    expect(
+      within(passwordForm).getByLabelText("New password"),
+    ).toHaveAttribute("type", "password");
+    expect(
+      within(passwordForm).getByLabelText("New password"),
+    ).toHaveDisplayValue("");
+    expect(
+      within(passwordForm).getByLabelText("Confirm new password"),
+    ).toHaveAttribute("type", "password");
+    expect(
+      within(passwordForm).getByLabelText("Confirm new password"),
+    ).toHaveDisplayValue("");
+    const sessionsForm = screen.getByRole("form", {
+      name: "会话管理表单",
+    });
+    expect(sessionsForm).toHaveAttribute("action", "/api/admin/sessions");
+    expect(
+      within(sessionsForm).getByRole("button", { name: "撤销其他会话" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("translation / queued")).toBeInTheDocument();
     expect(screen.getByText("4")).toBeInTheDocument();
     expect(screen.getByText("provider_error")).toBeInTheDocument();
