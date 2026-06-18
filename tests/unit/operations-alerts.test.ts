@@ -49,6 +49,12 @@ function overview(
     security: {
       activeSessionCount: 1,
     },
+    system: {
+      databaseWrite: {
+        checkedAt: new Date("2026-06-18T08:00:00.000Z"),
+        writable: true,
+      },
+    },
     ...overrides,
   };
 }
@@ -121,6 +127,29 @@ describe("deriveOperationsAlerts", () => {
         severity: "critical",
         code: "failed_jobs",
         message: "5 failed jobs need attention.",
+      }),
+    );
+  });
+
+  it("reports unavailable database writes as critical", () => {
+    expect(
+      deriveOperationsAlerts(
+        overview({
+          system: {
+            databaseWrite: {
+              checkedAt: new Date("2026-06-18T08:00:00.000Z"),
+              code: "database_write_unavailable",
+              message: "could not write to file",
+              writable: false,
+            },
+          },
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        severity: "critical",
+        code: "database_writes_unavailable",
+        message: "could not write to file",
       }),
     );
   });

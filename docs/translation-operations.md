@@ -98,7 +98,11 @@
 
     重新启动 `translation-worker`。启动时会释放尚未发起请求的陈旧预留，并按完整预留量结算长期未完成的已开始请求。阈值由 `TRANSLATION_STALE_RESERVATION_MS` 和 `TRANSLATION_STALE_REQUEST_MS` 控制。
 
-14. 诊断异常状态：
+14. 检查数据库写入健康：
+
+    `/admin` 会通过事务内临时表写入探测数据库写入能力。如果该探测失败，会显示 `database_writes_unavailable` critical 告警。`translation-worker` 在调用模型和预留 token 前也会执行同一类检查；写入不可用时，本轮翻译返回可重试失败，不会调用 DeepSeek/Qwen。
+
+15. 诊断异常状态：
 
     ```sql
     select status, last_error_code, left(last_error_message, 200) as last_error, updated_at
@@ -110,7 +114,7 @@
 
     `failed` 通常是 provider 配置、认证、协议或重试耗尽问题。`review_required` 表示英文源文在人工修正后变化，需要人工确认。`oversized` 表示请求超过 `maxInputBytes` 或严格预算估算超过每日上限。
 
-15. 每日备份 PostgreSQL，并保留 14 天：
+16. 每日备份 PostgreSQL，并保留 14 天：
 
     ```powershell
     $env:BACKUP_DIR = ".\backups"
@@ -124,7 +128,7 @@
     `shopify-docs-*.dump.sha256` 文件。`BACKUP_DIR` 默认是 `backups`，
     `BACKUP_RETENTION_DAYS` 默认是 `14`。
 
-16. 验证备份可以恢复到临时数据库：
+17. 验证备份可以恢复到临时数据库：
 
     ```powershell
     $env:BACKUP_DUMP_PATH = ".\backups\shopify-docs-20260618-072000.dump"

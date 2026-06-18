@@ -69,6 +69,12 @@ const overview: OperationsOverview = {
   security: {
     activeSessionCount: 2,
   },
+  system: {
+    databaseWrite: {
+      checkedAt: new Date("2026-06-18T08:00:00.000Z"),
+      writable: true,
+    },
+  },
   alerts: [
     {
       severity: "critical",

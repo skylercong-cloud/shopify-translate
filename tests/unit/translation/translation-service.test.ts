@@ -183,6 +183,12 @@ function options(
     },
     now: () => now,
     sleep: vi.fn().mockResolvedValue(undefined),
+    writeHealth: {
+      check: vi.fn().mockResolvedValue({
+        checkedAt: now,
+        writable: true,
+      }),
+    },
     ...overrides,
   };
 }
@@ -287,6 +293,36 @@ describe("translation service", () => {
       }),
     ).resolves.toEqual({ outcome: "skipped" });
     expect(input.tokenBudget.reserve).not.toHaveBeenCalled();
+  });
+
+  it("stops before model work when database writes are unavailable", async () => {
+    const input = options();
+    vi.mocked(input.writeHealth!.check).mockResolvedValue({
+      checkedAt: now,
+      code: "database_write_unavailable",
+      message: "could not write to file",
+      writable: false,
+    });
+
+    await expect(
+      createTranslationService(input).run({
+        jobId: "job-id",
+        blockId: "block-id",
+      }),
+    ).resolves.toEqual({
+      outcome: "retryable_failure",
+      code: "database_write_unavailable",
+      message: "could not write to file",
+    });
+    expect(input.writeHealth!.check).toHaveBeenCalledOnce();
+    expect(
+      input.translationRepository.findBlockCorrection,
+    ).not.toHaveBeenCalled();
+    expect(input.tokenBudget.reserve).not.toHaveBeenCalled();
+    expect(input.clients.deepseek.translate).not.toHaveBeenCalled();
+    expect(
+      input.translationRepository.publishRevision,
+    ).not.toHaveBeenCalled();
   });
 
   it("marks an impossible request oversized before reserving", async () => {

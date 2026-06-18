@@ -6,6 +6,7 @@ import type {
   TranslationRevisionSource,
 } from "@/db/repositories/translation-repository";
 import type { ProtectedToken } from "@/modules/ingestion/types";
+import type { DatabaseWriteHealth } from "@/modules/operations/database-write-health";
 
 import type { TranslationWorkerReadiness } from "./config-service";
 import type {
@@ -48,6 +49,10 @@ type TokenBudgetPort = Pick<
   "reserve" | "markRequestStarted" | "settle"
 >;
 
+type WriteHealthPort = {
+  check(): Promise<DatabaseWriteHealth>;
+};
+
 export type TranslationRunResult =
   | { outcome: "completed"; source: TranslationRevisionSource }
   | { outcome: "skipped" }
@@ -79,6 +84,7 @@ export type TranslationServiceOptions = {
   };
   now: () => Date;
   sleep: (milliseconds: number) => Promise<void>;
+  writeHealth?: WriteHealthPort;
 };
 
 type ProviderName = "deepseek" | "qwen";
@@ -156,6 +162,17 @@ function failureFrom(error: unknown): ProviderFailure {
 export function createTranslationService(
   options: TranslationServiceOptions,
 ) {
+  async function writeHealthFailure(): Promise<TranslationRunResult | null> {
+    const health = await options.writeHealth?.check();
+    if (!health || health.writable) return null;
+
+    return {
+      outcome: "retryable_failure",
+      code: health.code,
+      message: health.message,
+    };
+  }
+
   async function publishMemory(input: {
     blockId: string;
     sourceFingerprint: string;
@@ -383,6 +400,9 @@ export function createTranslationService(
       }
       const block = context.block;
       if (block.type === "code") return { outcome: "skipped" };
+
+      const writeFailure = await writeHealthFailure();
+      if (writeFailure) return writeFailure;
 
       const blockCorrection =
         await options.translationRepository.findBlockCorrection(

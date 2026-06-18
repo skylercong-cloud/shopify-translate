@@ -5,6 +5,8 @@ import type {
   translationProviders,
 } from "@/db/schema";
 
+import type { DatabaseWriteHealth } from "./database-write-health";
+
 export type OperationsProviderStatus = {
   provider: (typeof translationProviders)[number];
   baseUrl: string;
@@ -62,6 +64,7 @@ export type OperationsRecentFailure = {
 export type OperationsAlert = {
   severity: "critical" | "warning";
   code:
+    | "database_writes_unavailable"
     | "failed_jobs"
     | "missing_glossary"
     | "missing_prompt"
@@ -77,6 +80,9 @@ export type OperationsOverview = {
   activeGlossary: OperationsGlossaryStatus | null;
   security: {
     activeSessionCount: number;
+  };
+  system: {
+    databaseWrite: DatabaseWriteHealth;
   };
   jobs: {
     byQueueStatus: OperationsJobCount[];

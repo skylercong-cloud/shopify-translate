@@ -47,5 +47,14 @@ export function deriveOperationsAlerts(
     });
   }
 
+  if (!overview.system.databaseWrite.writable) {
+    alerts.push({
+      severity: "critical",
+      code: "database_writes_unavailable",
+      title: "Database writes unavailable",
+      message: overview.system.databaseWrite.message,
+    });
+  }
+
   return alerts;
 }

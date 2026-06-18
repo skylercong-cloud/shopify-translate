@@ -18,6 +18,7 @@ import type {
   OperationsRuntimeSettings,
 } from "@/modules/operations/types";
 import { deriveOperationsAlerts } from "@/modules/operations/alerts";
+import { checkDatabaseWriteHealth } from "@/modules/operations/database-write-health";
 
 type Database = NodePgDatabase<typeof schema>;
 
@@ -105,6 +106,7 @@ export function createOperationsRepository(db: Database) {
         activePrompt,
         activeGlossary,
         security,
+        databaseWrite,
         byQueueStatus,
         recentFailures,
       ] = await Promise.all([
@@ -132,6 +134,7 @@ export function createOperationsRepository(db: Database) {
         }),
         loadActiveGlossary(),
         loadSecurity(),
+        checkDatabaseWriteHealth(db),
         db
           .select({
             queue: jobs.queue,
@@ -173,6 +176,9 @@ export function createOperationsRepository(db: Database) {
         activePrompt: activePrompt ?? null,
         activeGlossary,
         security,
+        system: {
+          databaseWrite,
+        },
         jobs: {
           byQueueStatus,
           recentFailures,

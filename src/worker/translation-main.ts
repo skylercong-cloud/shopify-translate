@@ -5,6 +5,7 @@ import { createTranslationConfigRepository } from "@/db/repositories/translation
 import { createTranslationRepository } from "@/db/repositories/translation-repository";
 import { getEnv } from "@/lib/env";
 import { createTranslationWorker } from "@/modules/jobs/translation-worker";
+import { checkDatabaseWriteHealth } from "@/modules/operations/database-write-health";
 import { createTranslationConfigService } from "@/modules/translation/config-service";
 import { createModelCallAudit } from "@/modules/translation/model-call-audit";
 import { createOpenAiCompatibleProviderClient } from "@/modules/translation/provider-client";
@@ -56,6 +57,9 @@ async function main(): Promise<void> {
     now: () => new Date(),
     sleep: (milliseconds) =>
       new Promise((resolve) => setTimeout(resolve, milliseconds)),
+    writeHealth: {
+      check: () => checkDatabaseWriteHealth(db),
+    },
   });
   const worker = createTranslationWorker({
     jobRepository: createJobRepository(db),

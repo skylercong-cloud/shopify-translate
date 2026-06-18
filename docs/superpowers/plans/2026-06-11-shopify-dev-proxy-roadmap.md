@@ -147,8 +147,9 @@ and active-session counts were implemented on June 18, 2026. A local
 `corepack pnpm backup` command now runs `pg_dump`, writes SHA-256 checksum
 files, and enforces 14-day backup-file retention. `corepack pnpm backup:verify`
 now validates checksums and restores a dump into a temporary database before
-dropping it. Full glossary CRUD/history browsing, richer translation
-diff/history browsing, disk/database write-failure safeguards, and
+dropping it. Database write-health alerts and a translation worker write gate
+now prevent model calls when PostgreSQL writes are unavailable. Full glossary
+CRUD/history browsing, richer translation diff/history browsing, and
 provider-specific off-server backup copies remain pending for later Phase 5/6
 increments.
 
