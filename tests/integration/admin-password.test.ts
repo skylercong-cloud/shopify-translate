@@ -82,3 +82,42 @@ describe("setAdminPassword", () => {
     }
   });
 });
+
+describe("changeAdminPassword", () => {
+  it("requires the current password before replacing the hash and revoking sessions", async () => {
+    await service.setAdminPassword("current password value");
+    const first = await repository.findAdmin();
+    await repository.createSession({
+      id: "00000000-0000-4000-8000-000000000003",
+      tokenHash: "d".repeat(64),
+      userId: first!.id,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+
+    await expect(
+      service.changeAdminPassword("wrong password", "new password value"),
+    ).resolves.toBeNull();
+    await expect(
+      repository.findSessionByTokenHash("d".repeat(64)),
+    ).resolves.toBeDefined();
+    await expect(repository.findAdmin()).resolves.toMatchObject({
+      passwordHash: first!.passwordHash,
+    });
+
+    await expect(
+      service.changeAdminPassword(
+        "current password value",
+        "new password value",
+      ),
+    ).resolves.toMatchObject({
+      id: first!.id,
+      username: "admin",
+    });
+    const changed = await repository.findAdmin();
+
+    expect(changed?.passwordHash).not.toBe(first?.passwordHash);
+    await expect(
+      repository.findSessionByTokenHash("d".repeat(64)),
+    ).resolves.toBeUndefined();
+  });
+});

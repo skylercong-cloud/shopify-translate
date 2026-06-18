@@ -33,6 +33,20 @@ export function createAuthService(
       return repository.replaceAdminPasswordAndRevokeSessions(passwordHash);
     },
 
+    async changeAdminPassword(
+      currentPassword: string,
+      newPassword: string,
+    ) {
+      const admin = await authenticateAdmin(currentPassword);
+
+      if (!admin) {
+        return null;
+      }
+
+      const passwordHash = await hashPassword(newPassword);
+      return repository.replaceAdminPasswordAndRevokeSessions(passwordHash);
+    },
+
     authenticateAdmin,
 
     async login(password: string, now = new Date()) {

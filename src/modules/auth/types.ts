@@ -9,6 +9,10 @@ export interface AuthRepository {
   replaceAdminPasswordAndRevokeSessions(passwordHash: string): Promise<Admin>;
   findAdmin(): Promise<Admin | undefined>;
   deleteSessionsForUser(userId: string): Promise<void>;
+  deleteOtherSessionsForUser(
+    userId: string,
+    currentTokenHash: string,
+  ): Promise<void>;
 }
 
 export type StoredSession = {

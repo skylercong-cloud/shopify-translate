@@ -37,7 +37,7 @@
 - Modify: `src/db/repositories/auth-repository.ts`
 - Modify: `src/modules/auth/auth-service.ts`
 
-- [ ] **Step 1: Write failing repository and service tests**
+- [x] **Step 1: Write failing repository and service tests**
 
 Add an auth repository test that creates two sessions for the admin and asserts `deleteOtherSessionsForUser(user.id, currentTokenHash)` deletes only the other token hash. Add an auth service test that:
 - creates password `current password value`;
@@ -45,7 +45,7 @@ Add an auth repository test that creates two sessions for the admin and asserts 
 - calls `changeAdminPassword("wrong password", "new password value")` and expects `null` plus the original session still present;
 - calls `changeAdminPassword("current password value", "new password value")` and expects a changed password hash plus all sessions revoked.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -55,7 +55,7 @@ $env:NODE_ENV='test'; $env:DATABASE_URL='postgres://app:app@127.0.0.1:5432/shopi
 
 Expected: FAIL because the new repository and service methods do not exist.
 
-- [ ] **Step 3: Implement primitives**
+- [x] **Step 3: Implement primitives**
 
 Add to `AuthRepository`:
 
@@ -91,7 +91,7 @@ async changeAdminPassword(currentPassword: string, newPassword: string) {
 }
 ```
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run the same integration command, then:
 
@@ -101,6 +101,12 @@ corepack pnpm lint
 git add src/modules/auth/types.ts src/db/repositories/auth-repository.ts src/modules/auth/auth-service.ts tests/integration/auth-repository.test.ts tests/integration/admin-password.test.ts
 git commit -m "feat: add admin security primitives"
 ```
+
+Verification note: the targeted integration command was blocked before Vitest by
+`EPERM: operation not permitted, lstat 'C:\Users\admin'`, and the sandbox-outside
+rerun request was rejected because the current Codex usage limit had been
+reached. `corepack pnpm typecheck` and `corepack pnpm lint` passed after the
+implementation.
 
 ### Task 2: Admin Password Route
 

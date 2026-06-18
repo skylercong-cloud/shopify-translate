@@ -82,4 +82,34 @@ describe("auth repository", () => {
       repository.findSessionByTokenHash("c".repeat(64)),
     ).resolves.toBeDefined();
   });
+
+  it("deletes other sessions for a user while preserving the current session", async () => {
+    const user = await repository.upsertAdminPassword("hash-value");
+    createdUserIds.push(user.id);
+
+    const expiresAt = new Date(Date.now() + 60_000);
+    const currentTokenHash = "d".repeat(64);
+    const otherTokenHash = "e".repeat(64);
+    await repository.createSession({
+      id: randomUUID(),
+      tokenHash: currentTokenHash,
+      userId: user.id,
+      expiresAt,
+    });
+    await repository.createSession({
+      id: randomUUID(),
+      tokenHash: otherTokenHash,
+      userId: user.id,
+      expiresAt,
+    });
+
+    await repository.deleteOtherSessionsForUser(user.id, currentTokenHash);
+
+    await expect(
+      repository.findSessionByTokenHash(currentTokenHash),
+    ).resolves.toBeDefined();
+    await expect(
+      repository.findSessionByTokenHash(otherTokenHash),
+    ).resolves.toBeUndefined();
+  });
 });
