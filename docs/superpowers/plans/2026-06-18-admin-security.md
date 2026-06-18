@@ -114,14 +114,14 @@ implementation.
 - Create: `tests/integration/admin-password-route.test.ts`
 - Create: `src/app/api/admin/password/route.ts`
 
-- [ ] **Step 1: Write failing route tests**
+- [x] **Step 1: Write failing route tests**
 
 Test three behaviors:
 - authenticated valid form changes the password, revokes the current session, clears `shopify_docs_session`, and redirects to `/login?password=updated`;
 - wrong current password redirects to `/admin?password=invalid` and keeps the session;
 - missing session redirects to `/login`.
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -131,7 +131,7 @@ $env:NODE_ENV='test'; $env:DATABASE_URL='postgres://app:app@127.0.0.1:5432/shopi
 
 Expected: FAIL because `@/app/api/admin/password/route` does not exist.
 
-- [ ] **Step 3: Implement route**
+- [x] **Step 3: Implement route**
 
 Create `POST(request: Request)` that:
 - calls `getCurrentUser()` and redirects unauthenticated requests to `/login`;
@@ -141,7 +141,7 @@ Create `POST(request: Request)` that:
 - redirects failed authentication or password validation to `/admin?password=invalid`;
 - redirects success to `/login?password=updated` and deletes `SESSION_COOKIE_NAME`.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run the route test, `corepack pnpm typecheck`, and `corepack pnpm lint`, then:
 
@@ -149,6 +149,12 @@ Run the route test, `corepack pnpm typecheck`, and `corepack pnpm lint`, then:
 git add src/app/api/admin/password/route.ts tests/integration/admin-password-route.test.ts
 git commit -m "feat: change admin password from web"
 ```
+
+Verification note: `corepack pnpm typecheck` first failed because
+`@/app/api/admin/password/route` did not exist. After implementation,
+`corepack pnpm typecheck` and `corepack pnpm lint` passed. Targeted integration
+execution remains blocked by the current sandbox/usage-limit condition recorded
+in Task 1.
 
 ### Task 3: Admin Session Revocation Route And Overview Count
 
