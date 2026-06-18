@@ -283,11 +283,11 @@ first failed because the security card was absent. After implementation,
 - Modify: `docs/superpowers/plans/2026-06-11-shopify-dev-proxy-roadmap.md`
 - Modify: `docs/superpowers/plans/2026-06-18-admin-security.md`
 
-- [ ] **Step 1: Update docs**
+- [x] **Step 1: Update docs**
 
 Document that `/admin` supports changing the single-user password, clears/revokes sessions after password change, and can revoke other active sessions.
 
-- [ ] **Step 2: Run full available verification**
+- [x] **Step 2: Run full available verification**
 
 Run:
 
@@ -304,7 +304,12 @@ $env:NODE_ENV='production'; $env:DATABASE_URL='postgres://app:app@127.0.0.1:5432
 
 Run browser E2E if the sandbox permits it; record the existing `EPERM: operation not permitted, lstat 'C:\Users\admin'` blocker if it recurs.
 
-- [ ] **Step 3: Commit docs**
+Verification note:
+- Passed: `git diff --check`, `corepack pnpm lint`, `corepack pnpm typecheck`, `corepack pnpm test`, test database migration, `corepack pnpm test:e2e:seed`, and `corepack pnpm build`.
+- Build warning only: Next.js inferred the parent workspace root because both the parent checkout and this worktree have lockfiles.
+- Targeted integration and browser E2E remain unavailable in the current sandbox after the earlier `EPERM: operation not permitted, lstat 'C:\Users\admin'` failure and usage-limit rejection for sandbox-outside reruns.
+
+- [x] **Step 3: Commit docs**
 
 ```powershell
 git add README.md docs/superpowers/plans/2026-06-11-shopify-dev-proxy-roadmap.md docs/superpowers/plans/2026-06-18-admin-security.md
