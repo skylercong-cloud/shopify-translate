@@ -31,7 +31,56 @@ function ReaderText({ block }: { block: ReaderBlock }) {
   );
 }
 
-function ReaderBlockView({ block }: { block: ReaderBlock }) {
+function CorrectionForm({
+  block,
+  returnTo,
+}: {
+  block: ReaderBlock;
+  returnTo: string;
+}) {
+  if (!block.translatable) return null;
+
+  return (
+    <form
+      aria-label={`Correction form for ${block.id}`}
+      action="/api/admin/corrections"
+      className="reader-correction-form"
+      method="post"
+    >
+      <input name="blockId" type="hidden" value={block.id} />
+      <input
+        name="expectedSourceFingerprint"
+        type="hidden"
+        value={block.fingerprint}
+      />
+      <input name="returnTo" type="hidden" value={returnTo} />
+      <label>
+        <span>Manual translation</span>
+        <textarea
+          defaultValue={block.translatedText ?? ""}
+          name="translatedText"
+          rows={4}
+        />
+      </label>
+      <label>
+        <span>Scope</span>
+        <select defaultValue="global" name="scope">
+          <option value="global">global</option>
+          <option value="block">block</option>
+        </select>
+      </label>
+      <button type="submit">保存人工修正</button>
+    </form>
+  );
+}
+
+function ReaderBlockView({
+  block,
+  returnTo,
+}: {
+  block: ReaderBlock;
+  returnTo: string;
+}) {
   const status = statusLabel(
     block.translationStatus,
     block.currentRevisionSource,
@@ -54,9 +103,14 @@ function ReaderBlockView({ block }: { block: ReaderBlock }) {
   if (block.type === "heading") {
     return (
       <section className="reader-block reader-block--heading">
+        <div className="reader-block__meta">
+          <span>{status}</span>
+          <span>Block ID: {block.id}</span>
+        </div>
         <h2>
           <ReaderText block={block} />
         </h2>
+        <CorrectionForm block={block} returnTo={returnTo} />
       </section>
     );
   }
@@ -65,10 +119,12 @@ function ReaderBlockView({ block }: { block: ReaderBlock }) {
     <section className="reader-block">
       <div className="reader-block__meta">
         <span>{status}</span>
+        <span>Block ID: {block.id}</span>
       </div>
       <p>
         <ReaderText block={block} />
       </p>
+      <CorrectionForm block={block} returnTo={returnTo} />
     </section>
   );
 }
@@ -101,7 +157,11 @@ export function ReaderDocument({ page }: { page: ReaderPage }) {
         id={bodyId}
       >
         {blocks.map((block) => (
-          <ReaderBlockView block={block} key={blockKey(block)} />
+          <ReaderBlockView
+            block={block}
+            key={blockKey(block)}
+            returnTo={page.path}
+          />
         ))}
       </div>
     </article>

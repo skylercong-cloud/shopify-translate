@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { ReaderDocument } from "@/app/(app)/docs/[...slug]/reader-document";
@@ -119,8 +125,43 @@ describe("reader rendering", () => {
     expect(
       screen.getByRole("heading", { name: "Build apps" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Chinese: Use Shopify CLI.")).toBeInTheDocument();
+    expect(screen.getAllByText("Chinese: Use Shopify CLI.")[0])
+      .toBeInTheDocument();
     expect(screen.getByText("AI translated")).toBeInTheDocument();
+    expect(
+      screen.getByText((_, element) =>
+        element?.textContent === "Block ID: paragraph-id"
+      ),
+    ).toBeInTheDocument();
+    const correctionForm = screen.getByRole("form", {
+      name: "Correction form for paragraph-id",
+    });
+    expect(correctionForm).toHaveAttribute(
+      "action",
+      "/api/admin/corrections",
+    );
+    expect(
+      correctionForm.querySelector('input[name="blockId"]'),
+    ).toHaveAttribute("value", "paragraph-id");
+    expect(
+      correctionForm.querySelector(
+        'input[name="expectedSourceFingerprint"]',
+      ),
+    ).toHaveAttribute("value", "fingerprint");
+    expect(
+      correctionForm.querySelector('input[name="returnTo"]'),
+    ).toHaveAttribute("value", "/docs/apps/build");
+    expect(
+      within(correctionForm).getByLabelText("Manual translation"),
+    ).toHaveDisplayValue("Chinese: Use Shopify CLI.");
+    expect(within(correctionForm).getByLabelText("Scope")).toHaveDisplayValue(
+      "global",
+    );
+    expect(
+      within(correctionForm).getByRole("button", {
+        name: "保存人工修正",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Official source" }))
       .toHaveAttribute("href", "https://shopify.dev/docs/apps/build");
     expect(screen.getByText("shopify app dev")).toBeInTheDocument();
@@ -147,7 +188,8 @@ describe("reader rendering", () => {
 
     render(<ReaderDocument page={page([paragraph, code])} />);
 
-    expect(screen.getByText("Chinese: Use Shopify CLI.")).toBeVisible();
+    expect(screen.getAllByText("Chinese: Use Shopify CLI.")[0])
+      .toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "English" }));
 
