@@ -148,16 +148,18 @@ and active-session counts were implemented on June 18, 2026. A local
 files, and enforces 14-day backup-file retention. `corepack pnpm backup:verify`
 now validates checksums and restores a dump into a temporary database before
 dropping it. Database write-health alerts and a translation worker write gate
-now prevent model calls when PostgreSQL writes are unavailable. Full glossary
-CRUD/history browsing, a dedicated side-by-side translation diff browser, and
-provider-specific off-server backup copies remain pending for later Phase 5/6
-increments. Reader pages now expose compact per-block translation revision
-history for AI and manual outputs.
+now prevent model calls when PostgreSQL writes are unavailable. Reader pages
+now expose compact per-block translation revision history for AI and manual
+outputs, and `/admin` now exposes recent glossary version history with active
+status and term counts. Full per-term glossary CRUD/diff browsing, a dedicated
+side-by-side translation diff browser, and provider-specific off-server backup
+copies remain pending for later Phase 5/6 increments.
 
 Deliverables:
 
 - Provider, model, Prompt, and daily-budget settings.
 - Glossary CRUD with validation and conflict detection.
+- Glossary version history with active status and term counts.
 - Translation editor with English diff and manual-review history.
 - Job, failure, Token usage, sync, database, and disk status views.
 - Session revocation and password-change screen.
@@ -173,6 +175,7 @@ Exit criteria:
 - Backup retention deletes only expired backup files.
 - Restore verification succeeds against a temporary database.
 - Disk/database failure stops new translation writes and surfaces an alert.
+- Recent glossary versions and term counts are visible in `/admin`.
 
 ## Phase 6: Production Packaging And Mainland Deployment
 

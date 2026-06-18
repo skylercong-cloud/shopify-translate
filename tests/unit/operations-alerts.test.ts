@@ -42,6 +42,15 @@ function overview(
       ],
       createdAt: new Date("2026-06-18T08:00:00.000Z"),
     },
+    glossaryHistory: [
+      {
+        id: "glossary-id",
+        version: 1,
+        termCount: 2,
+        active: true,
+        createdAt: new Date("2026-06-18T08:00:00.000Z"),
+      },
+    ],
     jobs: {
       byQueueStatus: [],
       recentFailures: [],

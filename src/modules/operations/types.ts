@@ -44,6 +44,11 @@ export type OperationsGlossaryStatus = OperationsVersionStatus & {
   }>;
 };
 
+export type OperationsGlossaryHistoryItem = OperationsVersionStatus & {
+  active: boolean;
+  termCount: number;
+};
+
 export type OperationsJobCount = {
   queue: (typeof jobQueues)[number];
   status: (typeof jobStatuses)[number];
@@ -78,6 +83,7 @@ export type OperationsOverview = {
   providers: OperationsProviderStatus[];
   activePrompt: OperationsPromptStatus | null;
   activeGlossary: OperationsGlossaryStatus | null;
+  glossaryHistory: OperationsGlossaryHistoryItem[];
   security: {
     activeSessionCount: number;
   };

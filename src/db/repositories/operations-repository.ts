@@ -13,6 +13,7 @@ import {
   users,
 } from "@/db/schema";
 import type {
+  OperationsGlossaryHistoryItem,
   OperationsGlossaryStatus,
   OperationsOverview,
   OperationsRuntimeSettings,
@@ -82,6 +83,32 @@ export function createOperationsRepository(db: Database) {
     };
   }
 
+  async function loadGlossaryHistory(): Promise<
+    OperationsGlossaryHistoryItem[]
+  > {
+    return await db
+      .select({
+        id: glossaryVersions.id,
+        version: glossaryVersions.version,
+        active: glossaryVersions.active,
+        createdAt: glossaryVersions.createdAt,
+        termCount: sql<number>`count(${glossaryTerms.id})::int`,
+      })
+      .from(glossaryVersions)
+      .leftJoin(
+        glossaryTerms,
+        eq(glossaryTerms.glossaryVersionId, glossaryVersions.id),
+      )
+      .groupBy(
+        glossaryVersions.id,
+        glossaryVersions.version,
+        glossaryVersions.active,
+        glossaryVersions.createdAt,
+      )
+      .orderBy(desc(glossaryVersions.version))
+      .limit(10);
+  }
+
   async function loadSecurity(now = new Date()) {
     const [row] = await db
       .select({
@@ -105,6 +132,7 @@ export function createOperationsRepository(db: Database) {
         providers,
         activePrompt,
         activeGlossary,
+        glossaryHistory,
         security,
         databaseWrite,
         byQueueStatus,
@@ -133,6 +161,7 @@ export function createOperationsRepository(db: Database) {
           where: eq(promptVersions.active, true),
         }),
         loadActiveGlossary(),
+        loadGlossaryHistory(),
         loadSecurity(),
         checkDatabaseWriteHealth(db),
         db
@@ -175,6 +204,7 @@ export function createOperationsRepository(db: Database) {
         providers,
         activePrompt: activePrompt ?? null,
         activeGlossary,
+        glossaryHistory,
         security,
         system: {
           databaseWrite,

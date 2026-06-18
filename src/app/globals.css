@@ -532,6 +532,40 @@ h1 {
   color: #6d7175;
 }
 
+.operations-version-history {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e4ebe7;
+}
+
+.operations-version-history h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.operations-version-history ol {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.operations-version-history li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+  color: #6d7175;
+  font-size: 0.86rem;
+}
+
+.operations-version-history strong {
+  color: #202223;
+}
+
 .operations-section {
   display: grid;
   gap: 14px;

@@ -368,6 +368,36 @@ function GlossaryAdminForm({
   );
 }
 
+function GlossaryHistoryList({
+  history,
+}: {
+  history: OperationsOverview["glossaryHistory"];
+}) {
+  if (history.length === 0) return null;
+
+  return (
+    <section className="operations-version-history">
+      <h3>Glossary history</h3>
+      <ol>
+        {history.map((item) => (
+          <li key={item.id}>
+            <strong>Glossary v{item.version}</strong>
+            {item.active ? (
+              <span className="operations-badge operations-badge--ok">
+                Active
+              </span>
+            ) : null}
+            <span>{formatNumber(item.termCount)} terms</span>
+            <time dateTime={item.createdAt.toISOString()}>
+              {formatDate(item.createdAt)}
+            </time>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export function OperationsOverviewPanel({
   overview,
 }: {
@@ -464,6 +494,7 @@ export function OperationsOverviewPanel({
             ) : null}
           </div>
           <GlossaryAdminForm glossary={overview.activeGlossary} />
+          <GlossaryHistoryList history={overview.glossaryHistory} />
         </article>
       </div>
 

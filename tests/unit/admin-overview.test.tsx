@@ -48,6 +48,22 @@ const overview: OperationsOverview = {
     ],
     createdAt: new Date("2026-06-18T07:30:00.000Z"),
   },
+  glossaryHistory: [
+    {
+      id: "glossary-id",
+      version: 2,
+      termCount: 12,
+      active: true,
+      createdAt: new Date("2026-06-18T07:30:00.000Z"),
+    },
+    {
+      id: "old-glossary-id",
+      version: 1,
+      termCount: 2,
+      active: false,
+      createdAt: new Date("2026-06-17T07:30:00.000Z"),
+    },
+  ],
   jobs: {
     byQueueStatus: [
       { queue: "translation", status: "queued", count: 4 },
@@ -158,7 +174,7 @@ describe("OperationsOverviewPanel", () => {
       within(promptForm).getByRole("button", { name: "激活 Prompt" }),
     ).toBeInTheDocument();
     expect(screen.getByText("术语库 v2")).toBeInTheDocument();
-    expect(screen.getByText("12 terms")).toBeInTheDocument();
+    expect(screen.getAllByText("12 terms").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("Admin API")).toBeInTheDocument();
     expect(screen.getByText("Shopify CLI")).toBeInTheDocument();
     expect(
@@ -170,6 +186,12 @@ describe("OperationsOverviewPanel", () => {
     expect(
       screen.getByRole("button", { name: "激活术语库" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Glossary history")).toBeInTheDocument();
+    expect(screen.getByText("Glossary v2")).toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.getByText("Glossary v1")).toBeInTheDocument();
+    expect(screen.getByText("2 terms")).toBeInTheDocument();
+    expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0);
     expect(screen.getByText("500,000 tokens/day")).toBeInTheDocument();
     expect(
       screen.getByRole("form", { name: "运行设置表单" }),
