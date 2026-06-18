@@ -105,6 +105,72 @@ function OperationsAlertBanner({ alert }: { alert: OperationsAlert }) {
   );
 }
 
+function RuntimeSettingsForm({
+  settings,
+}: {
+  settings: OperationsOverview["settings"];
+}) {
+  return (
+    <form
+      aria-label="运行设置表单"
+      action="/api/admin/settings"
+      className="operations-settings-form"
+      method="post"
+    >
+      <label>
+        <span>Daily token limit</span>
+        <input
+          defaultValue={settings.dailyTokenLimit ?? ""}
+          min="1"
+          name="dailyTokenLimit"
+          type="number"
+        />
+      </label>
+      <label>
+        <span>Request timeout (ms)</span>
+        <input
+          defaultValue={settings.requestTimeoutMs}
+          min="1"
+          name="requestTimeoutMs"
+          required
+          type="number"
+        />
+      </label>
+      <label>
+        <span>Max input bytes</span>
+        <input
+          defaultValue={settings.maxInputBytes}
+          min="1"
+          name="maxInputBytes"
+          required
+          type="number"
+        />
+      </label>
+      <label>
+        <span>Max output tokens</span>
+        <input
+          defaultValue={settings.maxOutputTokens}
+          min="1"
+          name="maxOutputTokens"
+          required
+          type="number"
+        />
+      </label>
+      <label>
+        <span>Worker concurrency</span>
+        <input
+          defaultValue={settings.workerConcurrency}
+          min="1"
+          name="workerConcurrency"
+          required
+          type="number"
+        />
+      </label>
+      <button type="submit">保存运行设置</button>
+    </form>
+  );
+}
+
 export function OperationsOverviewPanel({
   overview,
 }: {
@@ -169,6 +235,7 @@ export function OperationsOverviewPanel({
               <dd>{formatNumber(overview.settings.workerConcurrency)}</dd>
             </div>
           </dl>
+          <RuntimeSettingsForm settings={overview.settings} />
         </article>
 
         <article className="operations-card">

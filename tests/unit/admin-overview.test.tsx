@@ -86,6 +86,27 @@ describe("OperationsOverviewPanel", () => {
     expect(screen.getByText("术语库 v2")).toBeInTheDocument();
     expect(screen.getByText("12 terms")).toBeInTheDocument();
     expect(screen.getByText("500,000 tokens/day")).toBeInTheDocument();
+    expect(
+      screen.getByRole("form", { name: "运行设置表单" }),
+    ).toHaveAttribute("action", "/api/admin/settings");
+    expect(screen.getByLabelText("Daily token limit")).toHaveDisplayValue(
+      "500000",
+    );
+    expect(screen.getByLabelText("Request timeout (ms)")).toHaveDisplayValue(
+      "30000",
+    );
+    expect(screen.getByLabelText("Max input bytes")).toHaveDisplayValue(
+      "500000",
+    );
+    expect(screen.getByLabelText("Max output tokens")).toHaveDisplayValue(
+      "2048",
+    );
+    expect(screen.getByLabelText("Worker concurrency")).toHaveDisplayValue(
+      "2",
+    );
+    expect(
+      screen.getByRole("button", { name: "保存运行设置" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("translation / queued")).toBeInTheDocument();
     expect(screen.getByText("4")).toBeInTheDocument();
     expect(screen.getByText("provider_error")).toBeInTheDocument();

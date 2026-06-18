@@ -425,6 +425,49 @@ h1 {
   font-weight: 650;
 }
 
+.operations-settings-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #e4ebe7;
+}
+
+.operations-settings-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.operations-settings-form span {
+  color: #6d7175;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.operations-settings-form input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #c9cccf;
+  border-radius: 10px;
+  color: #202223;
+  background: white;
+  font: inherit;
+}
+
+.operations-settings-form button {
+  justify-self: start;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  background: #0b6b4f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
 .operations-version {
   display: grid;
   gap: 6px;
