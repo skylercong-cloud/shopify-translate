@@ -139,11 +139,11 @@ Exit criteria:
 
 ## Phase 5: Personal Administration And Operations
 
-Status: Initial Phase 5A operations overview, degraded-state alerts, runtime
-numeric settings form, and glossary snapshot activation were implemented on
-June 18, 2026. Provider API key edit screens, full glossary CRUD/history
-browsing, translation editor, password/session administration, and backup
-automation remain pending for later Phase 5 increments.
+Status: Initial Phase 5A operations overview, degraded-state alerts, provider
+settings/API-key replacement, runtime numeric settings form, and glossary
+snapshot activation were implemented on June 18, 2026. Full glossary
+CRUD/history browsing, translation editor, password/session administration,
+and backup automation remain pending for later Phase 5 increments.
 
 Deliverables:
 
