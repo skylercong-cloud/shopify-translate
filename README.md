@@ -156,6 +156,31 @@ corepack pnpm backup
 备份命令读取 `DATABASE_URL`，使用 `pg_dump -Fc` 写入
 `shopify-docs-YYYYMMDD-HHmmss.dump`，同时生成 `.sha256` 校验文件，并删除超过保留期的匹配备份文件。部署到私人服务器后，仍需要用 cron 或系统计划任务每天调用该命令，并把备份目录同步到服务器外部位置。
 
+## 生产部署
+
+生产环境使用 `Dockerfile`、`compose.production.yaml` 和 `Caddyfile` 部署。Compose 栈只公开 Caddy 的 `80/443` 端口，Web、Worker、PostgreSQL 和备份服务都留在内部网络。
+
+1. 复制并填写生产环境变量：
+
+   ```bash
+   cp .env.production.example .env.production
+   ```
+
+2. 构建并启动：
+
+   ```bash
+   docker compose --env-file .env.production -f compose.production.yaml up -d --build
+   ```
+
+3. 执行迁移并设置登录密码：
+
+   ```bash
+   docker compose --env-file .env.production -f compose.production.yaml exec web corepack pnpm db:migrate
+   docker compose --env-file .env.production -f compose.production.yaml exec web corepack pnpm admin set-password
+   ```
+
+服务器配置、湖北备案、公安备案、备份、回滚和恢复流程见 [生产部署指南](docs/deployment.md)。
+
 ## 验证
 
 ```powershell

@@ -7,11 +7,20 @@ function readWorkspaceFile(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
 }
 
+function readComposeService(compose: string, service: string) {
+  const match = new RegExp(
+    `\\n  ${service}:\\n([\\s\\S]*?)(?=\\n  [a-zA-Z0-9_-]+:\\n|\\nvolumes:|$)`,
+  ).exec(compose);
+
+  return match?.[1] ?? "";
+}
+
 describe("production packaging", () => {
   it("builds a locked production app image for web and workers", () => {
     const dockerfile = readWorkspaceFile("Dockerfile");
 
-    expect(dockerfile).toContain("FROM node:22-alpine AS deps");
+    expect(dockerfile).toContain("FROM node:22-alpine AS base");
+    expect(dockerfile).toContain("FROM base AS deps");
     expect(dockerfile).toContain("corepack enable");
     expect(dockerfile).toContain("pnpm install --frozen-lockfile");
     expect(dockerfile).toContain("corepack pnpm build");
@@ -35,6 +44,9 @@ describe("production packaging", () => {
       expect(compose).toContain(service);
     }
 
+    const dbService = readComposeService(compose, "db");
+    const caddyService = readComposeService(compose, "caddy");
+
     expect(compose).toContain("postgres:16-alpine");
     expect(compose).toContain("pg_isready");
     expect(compose).toContain("/api/health/live");
@@ -45,9 +57,9 @@ describe("production packaging", () => {
     expect(compose).toContain("shopify_backups:");
     expect(compose).toContain("caddy_data:");
     expect(compose).toContain("caddy_config:");
-    expect(compose).not.toMatch(/db:\s*[\s\S]*?ports:/);
-    expect(compose).toContain('"80:80"');
-    expect(compose).toContain('"443:443"');
+    expect(dbService).not.toContain("ports:");
+    expect(caddyService).toContain('"80:80"');
+    expect(caddyService).toContain('"443:443"');
   });
 
   it("ships a production environment template without real secrets", () => {
@@ -59,7 +71,6 @@ describe("production packaging", () => {
       "APP_ORIGIN=",
       "DATABASE_URL=",
       "SESSION_DAYS=30",
-      "ADMIN_PASSWORD=",
       "MODEL_KEY_ENCRYPTION_KEY=",
       "SOURCE_REQUEST_CONCURRENCY=",
       "INGESTION_POLL_INTERVAL_MS=",
@@ -74,6 +85,7 @@ describe("production packaging", () => {
 
     expect(env).not.toContain("sk-");
     expect(env).not.toContain("phase-one-test-password");
+    expect(env).not.toContain("ADMIN_PASSWORD");
   });
 
   it("terminates TLS with Caddy and sends baseline security headers", () => {
@@ -98,8 +110,8 @@ describe("production packaging", () => {
       "4 GB",
       ".env.production",
       "MODEL_KEY_ENCRYPTION_KEY",
-      "docker compose -f compose.production.yaml up -d --build",
-      "docker compose -f compose.production.yaml exec web corepack pnpm db:migrate",
+      "docker compose --env-file .env.production -f compose.production.yaml up -d --build",
+      "docker compose --env-file .env.production -f compose.production.yaml exec web corepack pnpm db:migrate",
       "corepack pnpm admin set-password",
       "Hubei ICP",
       "public-security filing",

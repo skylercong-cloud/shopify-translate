@@ -172,6 +172,12 @@ Exit criteria:
 
 ## Phase 6: Production Packaging And Mainland Deployment
 
+Status: Production Docker packaging, Compose services, Caddy HTTPS/security
+headers, production environment template, deployment commands, backup guidance,
+rollback/restore runbooks, and Hubei ICP/public-security filing checklist were
+added on June 18, 2026. Real server purchase, DNS changes, filing submission,
+and provider-specific off-server backup automation remain deployment-time steps.
+
 Deliverables:
 
 - Multi-stage production Docker images for web and worker.

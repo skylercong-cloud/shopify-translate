@@ -5,6 +5,7 @@ outputs/
 .env
 .env.*
 !.env.example
+!.env.production.example
 backups/
 node_modules/
 dist/

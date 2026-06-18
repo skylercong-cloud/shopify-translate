@@ -37,7 +37,7 @@ Create `tests/unit/production-packaging.test.ts` with assertions that:
 - Postgres has no host `ports`;
 - services have health checks or dependency health gates where applicable;
 - backups mount a persistent backup volume;
-- `.env.production.example` includes domain, app origin, database URL, admin/session, model encryption, worker, source, translation, backup, and Caddy variables;
+- `.env.production.example` includes domain, app origin, database URL, session, model encryption, worker, source, translation, backup, and Caddy variables;
 - `Caddyfile` reverse proxies to `web:3000` and sends core security headers;
 - `docs/deployment.md` documents provisioning, secrets, deploy, migrate, backup, rollback, restore, and Hubei ICP/public-security filing.
 
@@ -125,7 +125,7 @@ Add:
   - Docker and Git installation checklist;
   - `.env.production` creation and secret generation;
   - admin password bootstrap;
-  - `docker compose -f compose.production.yaml up -d --build`;
+  - `docker compose --env-file .env.production -f compose.production.yaml up -d --build`;
   - migration and optional preview seed commands;
   - backup retention and off-server copy note;
   - rollback and restore procedure;
