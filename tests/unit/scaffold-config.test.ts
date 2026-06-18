@@ -61,6 +61,12 @@ describe("application scaffold configuration", () => {
     expect(packageJson.scripts.backup).toBe("tsx scripts/backup-database.ts");
   });
 
+  it("exposes a backup restore verification command", () => {
+    expect(packageJson.scripts["backup:verify"]).toBe(
+      "tsx scripts/verify-backup-restore.ts",
+    );
+  });
+
   it("exposes a local preview seed command", () => {
     expect(packageJson.scripts["preview:seed"]).toBe(
       "tsx scripts/seed-local-preview.ts",
