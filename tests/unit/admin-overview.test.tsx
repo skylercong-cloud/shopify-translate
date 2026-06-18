@@ -60,7 +60,14 @@ const overview: OperationsOverview = {
       },
     ],
   },
-  alerts: [],
+  alerts: [
+    {
+      severity: "critical",
+      code: "failed_jobs",
+      title: "后台任务失败",
+      message: "1 failed jobs need attention.",
+    },
+  ],
 };
 
 describe("OperationsOverviewPanel", () => {
@@ -83,6 +90,9 @@ describe("OperationsOverviewPanel", () => {
     expect(screen.getByText("4")).toBeInTheDocument();
     expect(screen.getByText("provider_error")).toBeInTheDocument();
     expect(screen.getByText("DeepSeek failed")).toBeInTheDocument();
+    expect(screen.getByText("需要处理")).toBeInTheDocument();
+    expect(screen.getByText("后台任务失败")).toBeInTheDocument();
+    expect(screen.getByText("1 failed jobs need attention.")).toBeInTheDocument();
     expect(screen.queryByText(/encrypted/i)).not.toBeInTheDocument();
   });
 });

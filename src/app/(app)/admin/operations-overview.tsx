@@ -1,4 +1,5 @@
 import type {
+  OperationsAlert,
   OperationsJobCount,
   OperationsOverview,
   OperationsProviderStatus,
@@ -85,6 +86,25 @@ function RecentFailure({ failure }: { failure: OperationsRecentFailure }) {
   );
 }
 
+function OperationsAlertBanner({ alert }: { alert: OperationsAlert }) {
+  return (
+    <article
+      className={[
+        "operations-alert",
+        alert.severity === "critical"
+          ? "operations-alert--critical"
+          : "operations-alert--warning",
+      ].join(" ")}
+    >
+      <span>{alert.severity === "critical" ? "需要处理" : "注意"}</span>
+      <div>
+        <strong>{alert.title}</strong>
+        <p>{alert.message}</p>
+      </div>
+    </article>
+  );
+}
+
 export function OperationsOverviewPanel({
   overview,
 }: {
@@ -98,6 +118,22 @@ export function OperationsOverviewPanel({
         这里是只读状态页：展示模型配置、Prompt 和术语库版本、Token 预算、
         Worker 并发以及最近失败任务。API key 密文不会进入页面数据。
       </p>
+
+      <section className="operations-alerts" aria-label="运维告警">
+        {overview.alerts.length === 0 ? (
+          <article className="operations-alert operations-alert--ok">
+            <span>状态正常</span>
+            <div>
+              <strong>没有需要处理的运维告警</strong>
+              <p>当前模型配置、Prompt、术语库和后台任务状态没有降级信号。</p>
+            </div>
+          </article>
+        ) : (
+          overview.alerts.map((alert) => (
+            <OperationsAlertBanner key={alert.code} alert={alert} />
+          ))
+        )}
+      </section>
 
       <div className="operations-grid">
         <article className="operations-card">
