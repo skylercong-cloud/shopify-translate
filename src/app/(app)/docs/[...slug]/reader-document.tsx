@@ -31,6 +31,56 @@ function ReaderText({ block }: { block: ReaderBlock }) {
   );
 }
 
+const revisionSourceLabels = {
+  ai: "AI translation",
+  ai_memory: "AI memory",
+  block_manual: "Block manual correction",
+  global_manual: "Global manual correction",
+} satisfies Record<ReaderBlock["currentRevisionSource"] & string, string>;
+
+function formatRevisionDate(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Shanghai",
+  }).format(value);
+}
+
+function RevisionHistory({ block }: { block: ReaderBlock }) {
+  const history = block.revisionHistory ?? [];
+
+  if (!block.translatable || history.length === 0) {
+    return null;
+  }
+
+  return (
+    <details className="reader-revision-history">
+      <summary>
+        Translation history ({history.length})
+      </summary>
+      <ol>
+        {history.map((revision) => (
+          <li key={revision.id}>
+            <div className="reader-revision-history__meta">
+              <strong>{revisionSourceLabels[revision.source]}</strong>
+              {revision.current ? <span>Current</span> : null}
+              <time dateTime={revision.createdAt.toISOString()}>
+                {formatRevisionDate(revision.createdAt)}
+              </time>
+              {revision.provider && revision.modelId ? (
+                <span>
+                  {revision.provider} / {revision.modelId}
+                </span>
+              ) : null}
+            </div>
+            <p>{revision.translatedText}</p>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
 function CorrectionForm({
   block,
   returnTo,
@@ -111,6 +161,7 @@ function ReaderBlockView({
           <ReaderText block={block} />
         </h2>
         <CorrectionForm block={block} returnTo={returnTo} />
+        <RevisionHistory block={block} />
       </section>
     );
   }
@@ -125,6 +176,7 @@ function ReaderBlockView({
         <ReaderText block={block} />
       </p>
       <CorrectionForm block={block} returnTo={returnTo} />
+      <RevisionHistory block={block} />
     </section>
   );
 }

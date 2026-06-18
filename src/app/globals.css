@@ -738,6 +738,63 @@ h1 {
   font-weight: 800;
 }
 
+.reader-revision-history {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e4ebe7;
+  border-radius: 14px;
+  background: #fbfdfc;
+}
+
+.reader-revision-history summary {
+  color: #0b6b4f;
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.reader-revision-history ol {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+
+.reader-revision-history li {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid #e4ebe7;
+}
+
+.reader-revision-history__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  color: #6d7175;
+  font-size: 0.75rem;
+}
+
+.reader-revision-history__meta strong {
+  color: #202223;
+}
+
+.reader-revision-history__meta span {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #edf7f3;
+  font-weight: 750;
+}
+
+.reader-revision-history p {
+  margin: 0;
+  color: #3f4347;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
 .reader-block--heading h2 {
   margin: 0;
   font-size: 1.6rem;

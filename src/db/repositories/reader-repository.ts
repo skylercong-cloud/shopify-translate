@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import type * as schema from "@/db/schema";
@@ -12,6 +12,7 @@ import {
 import type {
   ReaderBlock,
   ReaderPage,
+  ReaderRevisionHistoryItem,
   ReaderTranslationStatus,
   ReaderTranslationSummary,
 } from "@/modules/reader/types";
@@ -88,7 +89,9 @@ export function createReaderRepository(db: Database) {
           payload: contentBlocks.payload,
           translatable: contentBlocks.translatable,
           fingerprint: contentBlocks.fingerprint,
+          blockTranslationId: blockTranslations.id,
           translationStatus: blockTranslations.status,
+          currentRevisionId: blockTranslations.currentRevisionId,
           translatedText: translationRevisions.translatedText,
           currentRevisionSource: translationRevisions.source,
         })
@@ -103,6 +106,75 @@ export function createReaderRepository(db: Database) {
         )
         .where(eq(contentBlocks.pageVersionId, page.versionId))
         .orderBy(asc(contentBlocks.ordinal));
+
+      const translationIds = rows
+        .map((row) => row.blockTranslationId)
+        .filter((id): id is string => id !== null);
+      const currentRevisionIds = new Map<string, string | null>();
+      for (const row of rows) {
+        if (row.blockTranslationId) {
+          currentRevisionIds.set(
+            row.blockTranslationId,
+            row.currentRevisionId,
+          );
+        }
+      }
+      const revisionRows =
+        translationIds.length === 0
+          ? []
+          : await db
+              .select({
+                id: translationRevisions.id,
+                blockTranslationId:
+                  translationRevisions.blockTranslationId,
+                source: translationRevisions.source,
+                translatedText: translationRevisions.translatedText,
+                sourceFingerprint:
+                  translationRevisions.sourceFingerprint,
+                provider: translationRevisions.provider,
+                modelId: translationRevisions.modelId,
+                promptVersionId: translationRevisions.promptVersionId,
+                glossaryVersionId: translationRevisions.glossaryVersionId,
+                modelCallId: translationRevisions.modelCallId,
+                createdAt: translationRevisions.createdAt,
+              })
+              .from(translationRevisions)
+              .where(
+                inArray(
+                  translationRevisions.blockTranslationId,
+                  translationIds,
+                ),
+              )
+              .orderBy(
+                desc(translationRevisions.createdAt),
+                desc(translationRevisions.id),
+              );
+      const revisionHistory = new Map<
+        string,
+        ReaderRevisionHistoryItem[]
+      >();
+
+      for (const revision of revisionRows) {
+        const currentRevisionId = currentRevisionIds.get(
+          revision.blockTranslationId,
+        );
+        const history = revisionHistory.get(revision.blockTranslationId) ?? [];
+
+        history.push({
+          id: revision.id,
+          source: revision.source,
+          translatedText: revision.translatedText,
+          provider: revision.provider,
+          modelId: revision.modelId,
+          promptVersionId: revision.promptVersionId,
+          glossaryVersionId: revision.glossaryVersionId,
+          modelCallId: revision.modelCallId,
+          sourceFingerprint: revision.sourceFingerprint,
+          createdAt: revision.createdAt,
+          current: revision.id === currentRevisionId,
+        });
+        revisionHistory.set(revision.blockTranslationId, history);
+      }
 
       const blocks: ReaderBlock[] = rows.map((row) => ({
         id: row.id,
@@ -119,6 +191,9 @@ export function createReaderRepository(db: Database) {
         ),
         translatedText: row.translatedText ?? null,
         currentRevisionSource: row.currentRevisionSource ?? null,
+        revisionHistory: row.blockTranslationId
+          ? (revisionHistory.get(row.blockTranslationId) ?? [])
+          : [],
       }));
 
       return {

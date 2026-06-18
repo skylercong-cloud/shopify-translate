@@ -149,9 +149,10 @@ files, and enforces 14-day backup-file retention. `corepack pnpm backup:verify`
 now validates checksums and restores a dump into a temporary database before
 dropping it. Database write-health alerts and a translation worker write gate
 now prevent model calls when PostgreSQL writes are unavailable. Full glossary
-CRUD/history browsing, richer translation diff/history browsing, and
+CRUD/history browsing, a dedicated side-by-side translation diff browser, and
 provider-specific off-server backup copies remain pending for later Phase 5/6
-increments.
+increments. Reader pages now expose compact per-block translation revision
+history for AI and manual outputs.
 
 Deliverables:
 

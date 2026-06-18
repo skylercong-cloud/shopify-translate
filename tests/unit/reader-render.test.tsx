@@ -35,6 +35,7 @@ function block(
     translationStatus: "pending",
     translatedText: null,
     currentRevisionSource: null,
+    revisionHistory: [],
     ...overrides,
   };
 }

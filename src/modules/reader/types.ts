@@ -1,6 +1,7 @@
 import type {
   blockTranslations,
   contentBlocks,
+  translationProviders,
   translationRevisionSources,
 } from "@/db/schema";
 
@@ -10,6 +11,8 @@ export type ReaderTranslationStatus =
   typeof blockTranslations.$inferSelect.status;
 export type ReaderRevisionSource =
   (typeof translationRevisionSources)[number];
+export type ReaderTranslationProvider =
+  (typeof translationProviders)[number];
 
 export type ReaderTranslationSummary = {
   blockCount: number;
@@ -18,6 +21,20 @@ export type ReaderTranslationSummary = {
   reviewRequiredCount: number;
   failedCount: number;
   oversizedCount: number;
+};
+
+export type ReaderRevisionHistoryItem = {
+  id: string;
+  source: ReaderRevisionSource;
+  translatedText: string;
+  provider: ReaderTranslationProvider | null;
+  modelId: string | null;
+  promptVersionId: string | null;
+  glossaryVersionId: string | null;
+  modelCallId: string | null;
+  sourceFingerprint: string;
+  createdAt: Date;
+  current: boolean;
 };
 
 export type ReaderBlock = {
@@ -32,6 +49,7 @@ export type ReaderBlock = {
   translationStatus: ReaderTranslationStatus;
   translatedText: string | null;
   currentRevisionSource: ReaderRevisionSource | null;
+  revisionHistory: ReaderRevisionHistoryItem[];
 };
 
 export type ReaderPage = {
