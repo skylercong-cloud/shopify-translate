@@ -141,10 +141,11 @@ Exit criteria:
 
 Status: Initial Phase 5A operations overview, degraded-state alerts, provider
 settings/API-key replacement, Prompt snapshot activation, runtime numeric
-settings form, and glossary snapshot activation were implemented on June 18,
-2026. Full glossary CRUD/history browsing, translation editor,
-password/session administration, and backup automation remain pending for later
-Phase 5 increments.
+settings form, glossary snapshot activation, and reader-block manual
+correction forms were implemented on June 18, 2026. Full glossary CRUD/history
+browsing, richer translation diff/history browsing, password/session
+administration, and backup automation remain pending for later Phase 5
+increments.
 
 Deliverables:
 
