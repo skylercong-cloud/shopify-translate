@@ -457,6 +457,11 @@ h1 {
   font: inherit;
 }
 
+.operations-settings-form input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+}
+
 .operations-settings-form textarea {
   min-height: 130px;
   line-height: 1.5;
@@ -473,6 +478,13 @@ h1 {
   cursor: pointer;
   font: inherit;
   font-weight: 800;
+}
+
+.operations-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
 }
 
 .operations-terms {

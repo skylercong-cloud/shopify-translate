@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { OperationsOverviewPanel } from "@/app/(app)/admin/operations-overview";
@@ -84,8 +84,56 @@ describe("OperationsOverviewPanel", () => {
     expect(screen.getByText("deepseek")).toBeInTheDocument();
     expect(screen.getByText("deepseek-chat")).toBeInTheDocument();
     expect(screen.getByText("****seek")).toBeInTheDocument();
+    const deepseekForm = screen.getByRole("form", {
+      name: "deepseek provider form",
+    });
+    expect(deepseekForm).toHaveAttribute(
+      "action",
+      "/api/admin/providers",
+    );
+    expect(
+      deepseekForm.querySelector('input[name="provider"]'),
+    ).toHaveAttribute("value", "deepseek");
+    expect(within(deepseekForm).getByLabelText("Model ID")).toHaveDisplayValue(
+      "deepseek-chat",
+    );
+    expect(within(deepseekForm).getByLabelText("Base URL")).toHaveDisplayValue(
+      "https://api.deepseek.com",
+    );
+    expect(within(deepseekForm).getByLabelText("API key")).toHaveAttribute(
+      "type",
+      "password",
+    );
+    expect(within(deepseekForm).getByLabelText("API key")).toHaveDisplayValue(
+      "",
+    );
+    expect(within(deepseekForm).getByLabelText("Enabled")).toBeChecked();
+    expect(
+      within(deepseekForm).getByRole("button", {
+        name: "保存 provider 设置",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText("qwen")).toBeInTheDocument();
     expect(screen.getByText("未设置 key hint")).toBeInTheDocument();
+    const qwenForm = screen.getByRole("form", {
+      name: "qwen provider form",
+    });
+    expect(qwenForm).toHaveAttribute("action", "/api/admin/providers");
+    expect(qwenForm.querySelector('input[name="provider"]')).toHaveAttribute(
+      "value",
+      "qwen",
+    );
+    expect(within(qwenForm).getByLabelText("Model ID")).toHaveDisplayValue(
+      "qwen-plus",
+    );
+    expect(within(qwenForm).getByLabelText("Base URL")).toHaveDisplayValue(
+      "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    );
+    expect(within(qwenForm).getByLabelText("API key")).toHaveAttribute(
+      "type",
+      "password",
+    );
+    expect(within(qwenForm).getByLabelText("Enabled")).not.toBeChecked();
     expect(screen.getByText("Prompt v3")).toBeInTheDocument();
     expect(screen.getByText("术语库 v2")).toBeInTheDocument();
     expect(screen.getByText("12 terms")).toBeInTheDocument();

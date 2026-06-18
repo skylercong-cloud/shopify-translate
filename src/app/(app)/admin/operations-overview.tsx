@@ -55,7 +55,62 @@ function ProviderCard({ provider }: { provider: OperationsProviderStatus }) {
           <dd>{formatDate(provider.updatedAt)}</dd>
         </div>
       </dl>
+      <ProviderAdminForm provider={provider} />
     </article>
+  );
+}
+
+function ProviderAdminForm({
+  provider,
+}: {
+  provider: OperationsProviderStatus;
+}) {
+  return (
+    <form
+      aria-label={`${provider.provider} provider form`}
+      action="/api/admin/providers"
+      className="operations-settings-form operations-provider-form"
+      method="post"
+    >
+      <input name="provider" type="hidden" value={provider.provider} />
+      <label>
+        <span>Model ID</span>
+        <input
+          defaultValue={provider.modelId}
+          name="modelId"
+          required
+          type="text"
+        />
+      </label>
+      <label>
+        <span>Base URL</span>
+        <input
+          defaultValue={provider.baseUrl}
+          name="baseUrl"
+          required
+          type="url"
+        />
+      </label>
+      <label>
+        <span>API key</span>
+        <input
+          autoComplete="new-password"
+          name="apiKey"
+          placeholder="输入新 API key 以替换"
+          required
+          type="password"
+        />
+      </label>
+      <label className="operations-checkbox">
+        <input
+          defaultChecked={provider.enabled}
+          name="enabled"
+          type="checkbox"
+        />
+        <span>Enabled</span>
+      </label>
+      <button type="submit">保存 provider 设置</button>
+    </form>
   );
 }
 
