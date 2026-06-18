@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import nextConfig from "../../next.config";
 import playwrightConfig from "../../playwright.config";
 
 const packageJson = JSON.parse(
@@ -75,6 +76,10 @@ describe("application scaffold configuration", () => {
 
   it("uses the stable JSX runtime required by Next.js 16 builds", () => {
     expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
+  });
+
+  it("pins Turbopack to this project root", () => {
+    expect(nextConfig.turbopack?.root).toBe(process.cwd());
   });
 
   it("publishes the development database only on the loopback interface", () => {
