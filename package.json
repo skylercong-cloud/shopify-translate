@@ -22,6 +22,7 @@
     "admin": "tsx src/cli/admin.ts",
     "model": "tsx src/cli/model.ts",
     "backup": "tsx scripts/backup-database.ts",
+    "preview:seed": "tsx scripts/seed-local-preview.ts",
     "worker": "tsx src/worker/main.ts",
     "worker:dev": "tsx watch src/worker/main.ts",
     "translation-worker": "tsx src/worker/translation-main.ts",

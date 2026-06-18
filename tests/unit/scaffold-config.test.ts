@@ -61,6 +61,12 @@ describe("application scaffold configuration", () => {
     expect(packageJson.scripts.backup).toBe("tsx scripts/backup-database.ts");
   });
 
+  it("exposes a local preview seed command", () => {
+    expect(packageJson.scripts["preview:seed"]).toBe(
+      "tsx scripts/seed-local-preview.ts",
+    );
+  });
+
   it("uses the stable JSX runtime required by Next.js 16 builds", () => {
     expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
   });

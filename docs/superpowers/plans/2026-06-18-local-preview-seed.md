@@ -77,7 +77,7 @@ git commit -m "feat: add local preview seed workflow"
 - Modify: `package.json`
 - Modify: `tests/unit/scaffold-config.test.ts`
 
-- [ ] **Step 1: Write failing script/config test**
+- [x] **Step 1: Write failing script/config test**
 
 Extend `tests/unit/scaffold-config.test.ts` to assert:
 
@@ -85,7 +85,7 @@ Extend `tests/unit/scaffold-config.test.ts` to assert:
 "preview:seed": "tsx scripts/seed-local-preview.ts"
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -95,7 +95,7 @@ corepack pnpm test -- tests/unit/scaffold-config.test.ts
 
 Expected: FAIL because the package script is absent.
 
-- [ ] **Step 3: Implement CLI and package script**
+- [x] **Step 3: Implement CLI and package script**
 
 Create `scripts/seed-local-preview.ts` that:
 - imports `db` and `pool`;
@@ -104,7 +104,7 @@ Create `scripts/seed-local-preview.ts` that:
 - prints the seeded paths and translation count;
 - closes `pool` in a `finally` block.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run:
 
