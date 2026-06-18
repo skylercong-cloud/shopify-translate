@@ -54,6 +54,24 @@
 
 默认访问地址为 `http://127.0.0.1:3000`。密码哈希保存在 PostgreSQL 中；浏览器只保存 HttpOnly 会话 cookie，数据库仅保存会话 token 的 SHA-256 哈希。
 
+## 本地预览数据
+
+不接入真实 Shopify.dev 和 AI API 时，可以灌入一组固定演示页面：
+
+```powershell
+corepack pnpm db:migrate
+corepack pnpm preview:seed
+corepack pnpm dev
+```
+
+登录后可直接访问：
+
+- `http://127.0.0.1:3000/docs/apps/build`
+- `http://127.0.0.1:3000/docs/api/admin-graphql`
+- `http://127.0.0.1:3000/search?q=Shopify%20CLI`
+
+演示数据包含英文 source blocks、中文 translation revisions、`Shopify CLI` 和 `Admin GraphQL API` 等术语，以及保持英文不翻译的代码块。该命令可以重复运行；页面按 canonical URL 更新，不会抓取公开 Shopify.dev，也不会调用模型 API。
+
 ## 内容采集
 
 - 采集范围为 `https://shopify.dev/docs` 和 `/docs/**`，包括 `/docs/api/**`，不包括 Changelog。
@@ -175,4 +193,4 @@ corepack pnpm exec playwright install chromium
 
 ## 当前范围
 
-当前翻译后台已支持 DeepSeek 主用、Qwen 备用、专业术语保护、预算限额、人工修正、后台重译和本地自动化验证。独立中文阅读界面、中英文切换、官方来源链接、未缓存页面按需采集、缓存文档的中英文统一搜索、网页端人工修正、带降级告警的运维概览、网页端 provider 设置、网页端 Prompt 激活、网页端运行参数设置、网页端术语库快照激活、网页端密码修改、会话撤销，以及本地数据库备份命令均已接入。
+当前翻译后台已支持 DeepSeek 主用、Qwen 备用、专业术语保护、预算限额、人工修正、后台重译和本地自动化验证。独立中文阅读界面、中英文切换、官方来源链接、未缓存页面按需采集、缓存文档的中英文统一搜索、网页端人工修正、带降级告警的运维概览、网页端 provider 设置、网页端 Prompt 激活、网页端运行参数设置、网页端术语库快照激活、网页端密码修改、会话撤销、本地预览数据灌入，以及本地数据库备份命令均已接入。

@@ -122,14 +122,14 @@ git commit -m "feat: add local preview seed command"
 - Modify: `README.md`
 - Modify: `docs/superpowers/plans/2026-06-18-local-preview-seed.md`
 
-- [ ] **Step 1: Update docs**
+- [x] **Step 1: Update docs**
 
 Document:
 - run `corepack pnpm db:migrate`;
 - run `corepack pnpm preview:seed`;
 - visit `/docs/apps/build`, `/docs/api/admin-graphql`, and `/search?q=Shopify CLI`.
 
-- [ ] **Step 2: Run available verification**
+- [x] **Step 2: Run available verification**
 
 Run:
 
@@ -143,7 +143,12 @@ $env:NODE_ENV='production'; $env:DATABASE_URL='postgres://app:app@127.0.0.1:5432
 
 Run integration/E2E only if the current sandbox permits Node to start without the known `EPERM: operation not permitted, lstat 'C:\Users\admin'` blocker.
 
-- [ ] **Step 3: Commit docs**
+Verification note:
+- Passed: `git diff --check`, `corepack pnpm lint`, `corepack pnpm typecheck`, `corepack pnpm test`, test database migration, and production `corepack pnpm build`.
+- `corepack pnpm preview:seed` failed inside the sandbox with `EPERM: operation not permitted, lstat 'C:\Users\admin'`, then passed when rerun outside the sandbox against `shopify_docs_test`: it seeded 2 pages and published 7 demo translations.
+- Browser E2E was not rerun in this increment.
+
+- [x] **Step 3: Commit docs**
 
 ```powershell
 git add README.md docs/superpowers/plans/2026-06-18-local-preview-seed.md
