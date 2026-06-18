@@ -113,6 +113,9 @@ Exit criteria:
 
 ## Phase 4: Focused Reader And Unified Search
 
+Status: Phase 4A focused reader surface was implemented and verified on June 18,
+2026. Unified bilingual search remains pending for Phase 4B.
+
 Deliverables:
 
 - Focused reading layout with collapsed navigation.
