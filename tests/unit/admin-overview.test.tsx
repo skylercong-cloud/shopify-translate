@@ -89,6 +89,17 @@ describe("OperationsOverviewPanel", () => {
     expect(screen.getByText("Prompt v3")).toBeInTheDocument();
     expect(screen.getByText("术语库 v2")).toBeInTheDocument();
     expect(screen.getByText("12 terms")).toBeInTheDocument();
+    expect(screen.getByText("Admin API")).toBeInTheDocument();
+    expect(screen.getByText("Shopify CLI")).toBeInTheDocument();
+    expect(
+      screen.getByRole("form", { name: "术语库表单" }),
+    ).toHaveAttribute("action", "/api/admin/glossary");
+    expect(screen.getByLabelText("Glossary terms")).toHaveDisplayValue(
+      "Admin API\nShopify CLI",
+    );
+    expect(
+      screen.getByRole("button", { name: "激活术语库" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("500,000 tokens/day")).toBeInTheDocument();
     expect(
       screen.getByRole("form", { name: "运行设置表单" }),

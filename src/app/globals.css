@@ -446,7 +446,8 @@ h1 {
   text-transform: uppercase;
 }
 
-.operations-settings-form input {
+.operations-settings-form input,
+.operations-settings-form textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #c9cccf;
@@ -454,6 +455,12 @@ h1 {
   color: #202223;
   background: white;
   font: inherit;
+}
+
+.operations-settings-form textarea {
+  min-height: 130px;
+  line-height: 1.5;
+  resize: vertical;
 }
 
 .operations-settings-form button {
@@ -466,6 +473,31 @@ h1 {
   cursor: pointer;
   font: inherit;
   font-weight: 800;
+}
+
+.operations-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.operations-terms li {
+  padding: 6px 9px;
+  border: 1px solid #dbe5df;
+  border-radius: 999px;
+  color: #202223;
+  background: #f6faf8;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.operations-help {
+  margin: -4px 0 0;
+  color: #6d7175;
+  font-size: 0.85rem;
 }
 
 .operations-version {

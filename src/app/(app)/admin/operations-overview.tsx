@@ -171,6 +171,46 @@ function RuntimeSettingsForm({
   );
 }
 
+function GlossaryAdminForm({
+  glossary,
+}: {
+  glossary: OperationsOverview["activeGlossary"];
+}) {
+  const terms = glossary?.terms ?? [];
+  const defaultValue = terms.map((term) => term.sourceTerm).join("\n");
+
+  return (
+    <>
+      {terms.length === 0 ? (
+        <p className="operations-empty">当前没有已激活的术语。</p>
+      ) : (
+        <ul className="operations-terms" aria-label="当前术语库">
+          {terms.map((term) => (
+            <li key={term.normalizedTerm}>{term.sourceTerm}</li>
+          ))}
+        </ul>
+      )}
+      <form
+        aria-label="术语库表单"
+        action="/api/admin/glossary"
+        className="operations-settings-form operations-glossary-form"
+        method="post"
+      >
+        <label>
+          <span>Glossary terms</span>
+          <textarea
+            defaultValue={defaultValue}
+            name="terms"
+            rows={Math.max(4, terms.length)}
+          />
+        </label>
+        <p className="operations-help">每行一个需要保留英文的专业术语。</p>
+        <button type="submit">激活术语库</button>
+      </form>
+    </>
+  );
+}
+
 export function OperationsOverviewPanel({
   overview,
 }: {
@@ -263,6 +303,7 @@ export function OperationsOverviewPanel({
               </>
             ) : null}
           </div>
+          <GlossaryAdminForm glossary={overview.activeGlossary} />
         </article>
       </div>
 
