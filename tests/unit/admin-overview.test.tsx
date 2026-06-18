@@ -60,6 +60,7 @@ const overview: OperationsOverview = {
       },
     ],
   },
+  alerts: [],
 };
 
 describe("OperationsOverviewPanel", () => {

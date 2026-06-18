@@ -181,5 +181,12 @@ describe("operations repository", () => {
         lastErrorCode: "provider_error",
       }),
     ]);
+    expect(overview.alerts).toEqual([
+      expect.objectContaining({
+        severity: "critical",
+        code: "failed_jobs",
+        message: "1 failed jobs need attention.",
+      }),
+    ]);
   });
 });

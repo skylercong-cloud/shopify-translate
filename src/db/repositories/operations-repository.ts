@@ -15,6 +15,7 @@ import type {
   OperationsOverview,
   OperationsRuntimeSettings,
 } from "@/modules/operations/types";
+import { deriveOperationsAlerts } from "@/modules/operations/alerts";
 
 type Database = NodePgDatabase<typeof schema>;
 
@@ -138,7 +139,7 @@ export function createOperationsRepository(db: Database) {
           .limit(5),
       ]);
 
-      return {
+      const overview = {
         settings,
         providers,
         activePrompt: activePrompt ?? null,
@@ -147,6 +148,11 @@ export function createOperationsRepository(db: Database) {
           byQueueStatus,
           recentFailures,
         },
+      };
+
+      return {
+        ...overview,
+        alerts: deriveOperationsAlerts(overview),
       };
     },
   };

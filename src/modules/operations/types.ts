@@ -50,6 +50,17 @@ export type OperationsRecentFailure = {
   updatedAt: Date;
 };
 
+export type OperationsAlert = {
+  severity: "critical" | "warning";
+  code:
+    | "failed_jobs"
+    | "missing_glossary"
+    | "missing_prompt"
+    | "no_enabled_provider";
+  title: string;
+  message: string;
+};
+
 export type OperationsOverview = {
   settings: OperationsRuntimeSettings;
   providers: OperationsProviderStatus[];
@@ -59,4 +70,5 @@ export type OperationsOverview = {
     byQueueStatus: OperationsJobCount[];
     recentFailures: OperationsRecentFailure[];
   };
+  alerts: OperationsAlert[];
 };
