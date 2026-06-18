@@ -62,15 +62,38 @@ h1 {
 }
 
 .collapsed-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   padding: 20px 0;
   color: white;
   text-align: center;
   background: #173a2e;
 }
 
-.collapsed-nav span {
+.collapsed-nav span,
+.collapsed-nav a {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  color: white;
   font-size: 1.125rem;
   font-weight: 750;
+  text-decoration: none;
+}
+
+.collapsed-nav a {
+  color: rgb(255 255 255 / 80%);
+  font-size: 0.9rem;
+  background: rgb(255 255 255 / 10%);
+}
+
+.collapsed-nav a:hover {
+  color: white;
+  background: rgb(255 255 255 / 18%);
 }
 
 .app-main {
@@ -226,6 +249,209 @@ h1 {
   text-transform: uppercase;
 }
 
+.operations-page {
+  display: grid;
+  gap: 28px;
+}
+
+.operations-page .eyebrow {
+  margin: 0;
+  color: #5c5f62;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operations-page h1 {
+  font-size: clamp(2rem, 5vw, 3.75rem);
+}
+
+.operations-page__summary {
+  max-width: 760px;
+  margin: -12px 0 0;
+  color: #5c5f62;
+  font-size: 1.02rem;
+  line-height: 1.8;
+}
+
+.operations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.operations-grid--providers {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.operations-card,
+.operations-metric {
+  padding: 22px;
+  border: 1px solid #dbe5df;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 12px 32px rgb(23 58 46 / 6%);
+}
+
+.operations-card--compact {
+  box-shadow: none;
+}
+
+.operations-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.operations-card h2,
+.operations-section h2,
+.operations-card h3 {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.operations-card h2,
+.operations-section h2 {
+  font-size: 1.25rem;
+}
+
+.operations-card h3 {
+  font-size: 1.05rem;
+}
+
+.operations-badge {
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #6d7175;
+  background: #f1f2f3;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.operations-badge--ok {
+  color: #0b6b4f;
+  background: #e3f1ec;
+}
+
+.operations-list {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 0;
+}
+
+.operations-list div {
+  display: grid;
+  gap: 4px;
+}
+
+.operations-list dt {
+  color: #6d7175;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.operations-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #202223;
+  font-weight: 650;
+}
+
+.operations-version {
+  display: grid;
+  gap: 6px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e4ebe7;
+}
+
+.operations-version:last-child {
+  border-bottom: 0;
+}
+
+.operations-version strong {
+  font-size: 1rem;
+}
+
+.operations-version span,
+.operations-empty {
+  color: #6d7175;
+}
+
+.operations-section {
+  display: grid;
+  gap: 14px;
+}
+
+.operations-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.operations-metric {
+  display: grid;
+  gap: 10px;
+}
+
+.operations-metric span {
+  color: #6d7175;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.operations-metric strong {
+  font-size: 2rem;
+}
+
+.operations-failures {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.operations-failures li {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid #f0d5d3;
+  border-radius: 16px;
+  background: #fff8f7;
+}
+
+.operations-failures li > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+}
+
+.operations-failures strong {
+  color: #b42318;
+}
+
+.operations-failures span,
+.operations-failures time {
+  color: #6d7175;
+  font-size: 0.82rem;
+}
+
+.operations-failures p {
+  margin: 0;
+  color: #3f4347;
+  line-height: 1.6;
+}
+
 .reader-document {
   overflow: hidden;
   border: 1px solid #dbe5df;
@@ -374,5 +600,9 @@ h1 {
   .reader-document__body {
     padding-right: 24px;
     padding-left: 24px;
+  }
+
+  .operations-grid {
+    grid-template-columns: 1fr;
   }
 }
