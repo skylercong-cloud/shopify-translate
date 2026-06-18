@@ -159,7 +159,7 @@ git commit -m "feat: add backup restore verification command"
 - Modify: `docs/superpowers/plans/2026-06-11-shopify-dev-proxy-roadmap.md`
 - Modify: `docs/superpowers/plans/2026-06-18-backup-restore-verification.md`
 
-- [ ] **Step 1: Document restore verification**
+- [x] **Step 1: Document restore verification**
 
 Document:
 
@@ -169,7 +169,7 @@ Document:
 - temporary database creation and cleanup;
 - server usage through `docker compose ... exec backup corepack pnpm backup:verify`.
 
-- [ ] **Step 2: Run verification**
+- [x] **Step 2: Run verification**
 
 Run:
 
@@ -182,7 +182,7 @@ corepack pnpm test
 
 Expected: PASS.
 
-- [ ] **Step 3: Commit documentation and verification notes**
+- [x] **Step 3: Commit documentation and verification notes**
 
 Run:
 
@@ -190,6 +190,14 @@ Run:
 git add README.md docs/translation-operations.md docs/deployment.md docs/superpowers/plans/2026-06-11-shopify-dev-proxy-roadmap.md docs/superpowers/plans/2026-06-18-backup-restore-verification.md
 git commit -m "docs: describe backup restore verification"
 ```
+
+## Verification Notes
+
+- Passed: `git diff --check`.
+- Passed: `corepack pnpm lint`.
+- Passed: `corepack pnpm typecheck`.
+- Passed: `corepack pnpm test` with 41 files and 284 tests.
+- Passed: production `corepack pnpm build`; the known Next workspace-root warning still appears because the parent checkout and worktree both have lockfiles.
 
 ## Self-Review
 

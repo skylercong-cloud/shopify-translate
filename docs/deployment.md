@@ -103,6 +103,14 @@ The `backup` service runs `corepack pnpm backup` once per `BACKUP_INTERVAL_SECON
 
 Backups are written to the Docker volume mounted at `/backups`. Each dump has a matching `.sha256` checksum file. The service deletes only matching expired backup artifacts.
 
+Verify a selected backup by restoring it into a temporary database and dropping that database afterwards:
+
+```bash
+docker compose --env-file .env.production -f compose.production.yaml exec backup sh -c 'BACKUP_DUMP_PATH=/backups/shopify-docs-20260618-072000.dump corepack pnpm backup:verify'
+```
+
+`BACKUP_CHECKSUM_PATH` is optional; by default the command reads `${BACKUP_DUMP_PATH}.sha256`. The verification command creates a temporary `shopify_docs_restore_verify_*` database, runs `pg_restore`, probes the restored database, and drops the temporary database. It does not overwrite the production database.
+
 Recommended off-server copy:
 
 ```bash
@@ -155,10 +163,10 @@ If the failed release included a database migration, restore a backup made befor
    docker compose --env-file .env.production -f compose.production.yaml cp ./shopify-docs.dump db:/tmp/shopify-docs.dump
    ```
 
-3. Verify the checksum before restoring:
+3. Verify that the backup can be restored into a temporary database:
 
    ```bash
-   sha256sum -c shopify-docs.dump.sha256
+   docker compose --env-file .env.production -f compose.production.yaml exec backup sh -c 'BACKUP_DUMP_PATH=/backups/shopify-docs.dump corepack pnpm backup:verify'
    ```
 
 4. Restore into the database. This replaces current data:
@@ -180,4 +188,3 @@ If the failed release included a database migration, restore a backup made befor
 - Model API keys are configured after login in `/admin`; they are stored encrypted and only a key hint is shown.
 - If translation costs need to pause, disable both providers in `/admin`; cached pages remain readable.
 - Before changing `MODEL_KEY_ENCRYPTION_KEY`, follow the key-rotation steps in `docs/translation-operations.md`.
-

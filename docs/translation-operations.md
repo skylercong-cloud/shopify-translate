@@ -124,7 +124,20 @@
     `shopify-docs-*.dump.sha256` 文件。`BACKUP_DIR` 默认是 `backups`，
     `BACKUP_RETENTION_DAYS` 默认是 `14`。
 
-建议在服务器上用 cron 或系统计划任务每天执行一次 `corepack pnpm backup`。备份目录仍建议同步到对象存储或另一台服务器，并定期演练恢复；自动恢复校验会在部署运维阶段补齐。
+16. 验证备份可以恢复到临时数据库：
+
+    ```powershell
+    $env:BACKUP_DUMP_PATH = ".\backups\shopify-docs-20260618-072000.dump"
+    corepack pnpm backup:verify
+    ```
+
+    命令默认读取 `${BACKUP_DUMP_PATH}.sha256`，也可以通过
+    `BACKUP_CHECKSUM_PATH` 指定校验文件。验证过程会创建
+    `shopify_docs_restore_verify_*` 临时数据库，执行 `pg_restore`，
+    运行探测查询，然后删除该临时数据库；不会覆盖当前生产数据库。
+    如需自定义临时库名前缀，可设置 `RESTORE_VERIFY_DATABASE_PREFIX`。
+
+建议在服务器上用 cron 或系统计划任务每天执行一次 `corepack pnpm backup`，并定期运行 `corepack pnpm backup:verify` 抽查最新备份。备份目录仍建议同步到对象存储或另一台服务器。
 
 ## 常用 SQL
 

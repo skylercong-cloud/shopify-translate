@@ -156,6 +156,15 @@ corepack pnpm backup
 备份命令读取 `DATABASE_URL`，使用 `pg_dump -Fc` 写入
 `shopify-docs-YYYYMMDD-HHmmss.dump`，同时生成 `.sha256` 校验文件，并删除超过保留期的匹配备份文件。部署到私人服务器后，仍需要用 cron 或系统计划任务每天调用该命令，并把备份目录同步到服务器外部位置。
 
+验证备份可恢复时，指定 dump 路径后运行：
+
+```powershell
+$env:BACKUP_DUMP_PATH = ".\backups\shopify-docs-20260618-072000.dump"
+corepack pnpm backup:verify
+```
+
+该命令会读取同名 `.sha256` 文件，创建临时数据库，执行 `pg_restore`，运行探测查询，然后删除临时数据库；不会覆盖当前生产数据库。也可以通过 `BACKUP_CHECKSUM_PATH` 指定校验文件。
+
 ## 生产部署
 
 生产环境使用 `Dockerfile`、`compose.production.yaml` 和 `Caddyfile` 部署。Compose 栈只公开 Caddy 的 `80/443` 端口，Web、Worker、PostgreSQL 和备份服务都留在内部网络。
