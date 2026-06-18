@@ -139,6 +139,11 @@ Exit criteria:
 
 ## Phase 5: Personal Administration And Operations
 
+Status: Initial Phase 5A read-only operations overview was implemented on
+June 18, 2026. Provider/settings edit screens, glossary CRUD, translation
+editor, password/session administration, and backup automation remain pending
+for later Phase 5 increments.
+
 Deliverables:
 
 - Provider, model, Prompt, and daily-budget settings.
