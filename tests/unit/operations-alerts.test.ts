@@ -28,6 +28,8 @@ function overview(
     activePrompt: {
       id: "prompt-id",
       version: 1,
+      systemPrompt: "Keep technical terms in English.",
+      userPromptTemplate: "Translate:\n{{sourceText}}",
       createdAt: new Date("2026-06-18T08:00:00.000Z"),
     },
     activeGlossary: {

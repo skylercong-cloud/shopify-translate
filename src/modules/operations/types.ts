@@ -29,6 +29,11 @@ export type OperationsVersionStatus = {
   createdAt: Date;
 };
 
+export type OperationsPromptStatus = OperationsVersionStatus & {
+  systemPrompt: string;
+  userPromptTemplate: string;
+};
+
 export type OperationsGlossaryStatus = OperationsVersionStatus & {
   termCount: number;
   terms: Array<{
@@ -68,7 +73,7 @@ export type OperationsAlert = {
 export type OperationsOverview = {
   settings: OperationsRuntimeSettings;
   providers: OperationsProviderStatus[];
-  activePrompt: OperationsVersionStatus | null;
+  activePrompt: OperationsPromptStatus | null;
   activeGlossary: OperationsGlossaryStatus | null;
   jobs: {
     byQueueStatus: OperationsJobCount[];

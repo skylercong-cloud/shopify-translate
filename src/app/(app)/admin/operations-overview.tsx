@@ -226,6 +226,44 @@ function RuntimeSettingsForm({
   );
 }
 
+function PromptAdminForm({
+  prompt,
+}: {
+  prompt: OperationsOverview["activePrompt"];
+}) {
+  return (
+    <form
+      aria-label="Prompt 表单"
+      action="/api/admin/prompt"
+      className="operations-settings-form operations-prompt-form"
+      method="post"
+    >
+      <label>
+        <span>System prompt</span>
+        <textarea
+          defaultValue={prompt?.systemPrompt ?? ""}
+          name="systemPrompt"
+          required
+          rows={4}
+        />
+      </label>
+      <label>
+        <span>User prompt template</span>
+        <textarea
+          defaultValue={prompt?.userPromptTemplate ?? ""}
+          name="userPromptTemplate"
+          required
+          rows={5}
+        />
+      </label>
+      <p className="operations-help">
+        User prompt template 必须包含 {"{{sourceText}}"}。
+      </p>
+      <button type="submit">激活 Prompt</button>
+    </form>
+  );
+}
+
 function GlossaryAdminForm({
   glossary,
 }: {
@@ -345,6 +383,7 @@ export function OperationsOverviewPanel({
               <span>{formatDate(overview.activePrompt.createdAt)}</span>
             ) : null}
           </div>
+          <PromptAdminForm prompt={overview.activePrompt} />
           <div className="operations-version">
             <strong>
               {overview.activeGlossary

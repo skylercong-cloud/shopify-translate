@@ -164,7 +164,11 @@ describe("operations repository", () => {
     expect(JSON.stringify(overview)).not.toContain(
       "encrypted-deepseek-secret",
     );
-    expect(overview.activePrompt).toMatchObject({ version: 3 });
+    expect(overview.activePrompt).toMatchObject({
+      version: 3,
+      systemPrompt: "Keep technical terms in English.",
+      userPromptTemplate: "{{sourceText}}",
+    });
     expect(overview.activeGlossary).toMatchObject({
       version: 2,
       termCount: 2,

@@ -34,6 +34,8 @@ const overview: OperationsOverview = {
   activePrompt: {
     id: "prompt-id",
     version: 3,
+    systemPrompt: "Keep technical terms in English.",
+    userPromptTemplate: "Translate:\n{{sourceText}}",
     createdAt: new Date("2026-06-18T07:00:00.000Z"),
   },
   activeGlossary: {
@@ -135,6 +137,17 @@ describe("OperationsOverviewPanel", () => {
     );
     expect(within(qwenForm).getByLabelText("Enabled")).not.toBeChecked();
     expect(screen.getByText("Prompt v3")).toBeInTheDocument();
+    const promptForm = screen.getByRole("form", { name: "Prompt 表单" });
+    expect(promptForm).toHaveAttribute("action", "/api/admin/prompt");
+    expect(
+      within(promptForm).getByLabelText("System prompt"),
+    ).toHaveDisplayValue("Keep technical terms in English.");
+    expect(
+      within(promptForm).getByLabelText("User prompt template"),
+    ).toHaveDisplayValue("Translate:\n{{sourceText}}");
+    expect(
+      within(promptForm).getByRole("button", { name: "激活 Prompt" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("术语库 v2")).toBeInTheDocument();
     expect(screen.getByText("12 terms")).toBeInTheDocument();
     expect(screen.getByText("Admin API")).toBeInTheDocument();

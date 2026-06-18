@@ -105,6 +105,8 @@ export function createOperationsRepository(db: Database) {
           columns: {
             id: true,
             version: true,
+            systemPrompt: true,
+            userPromptTemplate: true,
             createdAt: true,
           },
           where: eq(promptVersions.active, true),
