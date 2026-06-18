@@ -859,6 +859,155 @@ h1 {
   line-height: 1.7;
 }
 
+.translation-review-page {
+  display: grid;
+  gap: 20px;
+}
+
+.translation-review-page h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  letter-spacing: -0.055em;
+}
+
+.translation-review-page__summary {
+  max-width: 760px;
+  margin: 0;
+  color: #6d7175;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.translation-review-list {
+  display: grid;
+  gap: 18px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.translation-review-card article {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid #dfe3e8;
+  border-radius: 20px;
+  background: white;
+  box-shadow: 0 16px 40px rgb(22 29 37 / 7%);
+}
+
+.translation-review-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.translation-review-card__header a {
+  color: #0b6b4f;
+  font-size: 1.08rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.translation-review-card__header p {
+  margin: 5px 0 0;
+  color: #6d7175;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.translation-review-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: #6d7175;
+  font-size: 0.78rem;
+}
+
+.translation-review-card__diff {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.translation-review-card__diff section {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 160px;
+  padding: 16px;
+  border: 1px solid #e4ebe7;
+  border-radius: 16px;
+  background: #fbfdfc;
+}
+
+.translation-review-card__diff h3 {
+  margin: 0;
+  color: #6d7175;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.translation-review-card__diff p {
+  margin: 0;
+  color: #202223;
+  line-height: 1.68;
+  white-space: pre-wrap;
+}
+
+.translation-review-card__empty {
+  color: #8c9196 !important;
+  font-style: italic;
+}
+
+.translation-review-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px auto;
+  gap: 12px;
+  align-items: end;
+  padding-top: 4px;
+}
+
+.translation-review-form label {
+  display: grid;
+  gap: 6px;
+  color: #5c5f62;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.translation-review-form textarea,
+.translation-review-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #c9cccf;
+  border-radius: 10px;
+  color: #202223;
+  background: white;
+  font: inherit;
+}
+
+.translation-review-form textarea {
+  min-height: 96px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.translation-review-form button {
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  background: #0b6b4f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
 @media (max-width: 640px) {
   .app-shell {
     grid-template-columns: 44px 1fr;
@@ -896,6 +1045,11 @@ h1 {
   }
 
   .operations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .translation-review-card__diff,
+  .translation-review-form {
     grid-template-columns: 1fr;
   }
 }

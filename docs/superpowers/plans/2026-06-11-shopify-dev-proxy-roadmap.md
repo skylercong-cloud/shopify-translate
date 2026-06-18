@@ -151,9 +151,10 @@ dropping it. Database write-health alerts and a translation worker write gate
 now prevent model calls when PostgreSQL writes are unavailable. Reader pages
 now expose compact per-block translation revision history for AI and manual
 outputs, and `/admin` now exposes recent glossary version history with active
-status and term counts. Full per-term glossary CRUD/diff browsing, a dedicated
-side-by-side translation diff browser, and provider-specific off-server backup
-copies remain pending for later Phase 5/6 increments.
+status and term counts. `/admin/review` now exposes a side-by-side translation
+review workbench with manual correction forms. Full per-term glossary CRUD/diff
+browsing, advanced word-level translation diffs, and provider-specific
+off-server backup copies remain pending for later Phase 5/6 increments.
 
 Deliverables:
 
@@ -161,6 +162,7 @@ Deliverables:
 - Glossary CRUD with validation and conflict detection.
 - Glossary version history with active status and term counts.
 - Translation editor with English diff and manual-review history.
+- Translation review workbench with side-by-side source/current translation panes.
 - Job, failure, Token usage, sync, database, and disk status views.
 - Session revocation and password-change screen.
 - Local `pg_dump` backup command with 14-day retention.
@@ -176,6 +178,7 @@ Exit criteria:
 - Restore verification succeeds against a temporary database.
 - Disk/database failure stops new translation writes and surfaces an alert.
 - Recent glossary versions and term counts are visible in `/admin`.
+- `/admin/review` displays current source and translation side by side and can publish manual corrections.
 
 ## Phase 6: Production Packaging And Mainland Deployment
 

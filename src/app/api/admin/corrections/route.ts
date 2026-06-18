@@ -10,6 +10,7 @@ import {
   createTranslationAdminService,
   createTranslationAdminStore,
 } from "@/modules/translation/translation-admin-service";
+import { normalizeCorrectionReturnTo } from "@/modules/translation/correction-return";
 
 type CorrectionScope = "global" | "block";
 
@@ -33,22 +34,6 @@ function parseScope(value: string): CorrectionScope {
   return value;
 }
 
-function parseReturnTo(value: string): string {
-  try {
-    const parsed = new URL(value, "http://local.invalid");
-    if (
-      parsed.origin !== "http://local.invalid" ||
-      !parsed.pathname.startsWith("/docs/")
-    ) {
-      return "/admin";
-    }
-
-    return `${parsed.pathname}${parsed.search}`;
-  } catch {
-    return "/admin";
-  }
-}
-
 function withCorrectionStatus(returnTo: string, status: "updated" | "invalid") {
   return `${returnTo}${returnTo.includes("?") ? "&" : "?"}correction=${status}`;
 }
@@ -61,7 +46,7 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
-  const returnTo = parseReturnTo(readText(formData, "returnTo"));
+  const returnTo = normalizeCorrectionReturnTo(readText(formData, "returnTo"));
 
   try {
     await createTranslationAdminService({

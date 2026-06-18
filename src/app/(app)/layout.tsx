@@ -20,6 +20,9 @@ export default async function AppLayout({
         <Link href="/admin" aria-label="运维概览">
           O
         </Link>
+        <Link href="/admin/review" aria-label="Translation review">
+          V
+        </Link>
       </nav>
       <div className="app-main">
         <header className="app-header">
