@@ -168,6 +168,10 @@ describe("operations repository", () => {
     expect(overview.activeGlossary).toMatchObject({
       version: 2,
       termCount: 2,
+      terms: [
+        { sourceTerm: "Admin API", normalizedTerm: "admin api" },
+        { sourceTerm: "Shopify CLI", normalizedTerm: "shopify cli" },
+      ],
     });
     expect(overview.jobs.byQueueStatus).toEqual([
       { queue: "ingestion", status: "running", count: 1 },

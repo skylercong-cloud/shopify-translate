@@ -50,27 +50,33 @@ export function createOperationsRepository(db: Database) {
   }
 
   async function loadActiveGlossary(): Promise<OperationsGlossaryStatus | null> {
-    const [activeGlossary] = await db
-      .select({
-        id: glossaryVersions.id,
-        version: glossaryVersions.version,
-        createdAt: glossaryVersions.createdAt,
-        termCount: sql<number>`count(${glossaryTerms.id})::int`,
-      })
-      .from(glossaryVersions)
-      .leftJoin(
-        glossaryTerms,
-        eq(glossaryTerms.glossaryVersionId, glossaryVersions.id),
-      )
-      .where(eq(glossaryVersions.active, true))
-      .groupBy(
-        glossaryVersions.id,
-        glossaryVersions.version,
-        glossaryVersions.createdAt,
-      )
-      .limit(1);
+    const activeGlossary = await db.query.glossaryVersions.findFirst({
+      columns: {
+        id: true,
+        version: true,
+        createdAt: true,
+      },
+      where: eq(glossaryVersions.active, true),
+    });
 
-    return activeGlossary ?? null;
+    if (!activeGlossary) {
+      return null;
+    }
+
+    const terms = await db
+      .select({
+        sourceTerm: glossaryTerms.sourceTerm,
+        normalizedTerm: glossaryTerms.normalizedTerm,
+      })
+      .from(glossaryTerms)
+      .where(eq(glossaryTerms.glossaryVersionId, activeGlossary.id))
+      .orderBy(asc(glossaryTerms.normalizedTerm));
+
+    return {
+      ...activeGlossary,
+      termCount: terms.length,
+      terms,
+    };
   }
 
   return {

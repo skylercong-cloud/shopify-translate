@@ -34,6 +34,10 @@ function overview(
       id: "glossary-id",
       version: 1,
       termCount: 2,
+      terms: [
+        { sourceTerm: "Admin API", normalizedTerm: "admin api" },
+        { sourceTerm: "Shopify CLI", normalizedTerm: "shopify cli" },
+      ],
       createdAt: new Date("2026-06-18T08:00:00.000Z"),
     },
     jobs: {

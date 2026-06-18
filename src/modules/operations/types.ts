@@ -31,6 +31,10 @@ export type OperationsVersionStatus = {
 
 export type OperationsGlossaryStatus = OperationsVersionStatus & {
   termCount: number;
+  terms: Array<{
+    sourceTerm: string;
+    normalizedTerm: string;
+  }>;
 };
 
 export type OperationsJobCount = {

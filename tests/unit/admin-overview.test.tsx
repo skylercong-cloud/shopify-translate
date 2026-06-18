@@ -40,6 +40,10 @@ const overview: OperationsOverview = {
     id: "glossary-id",
     version: 2,
     termCount: 12,
+    terms: [
+      { sourceTerm: "Admin API", normalizedTerm: "admin api" },
+      { sourceTerm: "Shopify CLI", normalizedTerm: "shopify cli" },
+    ],
     createdAt: new Date("2026-06-18T07:30:00.000Z"),
   },
   jobs: {
