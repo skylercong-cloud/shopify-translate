@@ -135,6 +135,97 @@ h1 {
   line-height: 1.7;
 }
 
+.search-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.search-form label {
+  color: #5c5f62;
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.search-form__controls {
+  display: flex;
+  gap: 10px;
+}
+
+.search-form input {
+  width: min(100%, 520px);
+  padding: 12px 14px;
+  border: 1px solid #c9cccf;
+  border-radius: 12px;
+  color: #202223;
+  background: white;
+  font: inherit;
+}
+
+.search-form button {
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  color: white;
+  background: #0b6b4f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+}
+
+.search-page,
+.search-state,
+.search-results {
+  display: grid;
+  gap: 24px;
+}
+
+.search-results ol {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.search-result {
+  padding: 20px;
+  border: 1px solid #dbe5df;
+  border-radius: 18px;
+  background: white;
+}
+
+.search-result a {
+  color: #0b6b4f;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.search-result p {
+  margin: 10px 0 0;
+  color: #3f4347;
+  line-height: 1.7;
+}
+
+.search-result__path {
+  color: #6d7175 !important;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.85rem;
+}
+
+.search-result span {
+  display: inline-flex;
+  margin-top: 12px;
+  color: #6d7175;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .reader-document {
   overflow: hidden;
   border: 1px solid #dbe5df;
@@ -269,6 +360,14 @@ h1 {
 
   .empty-reader {
     padding: 28px 24px;
+  }
+
+  .search-form__controls {
+    display: grid;
+  }
+
+  .search-form input {
+    width: 100%;
   }
 
   .reader-document__header,
