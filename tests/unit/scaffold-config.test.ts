@@ -68,6 +68,12 @@ describe("application scaffold configuration", () => {
     );
   });
 
+  it("exposes a production deployment preflight command", () => {
+    expect(packageJson.scripts["deploy:preflight"]).toBe(
+      "tsx scripts/production-preflight.ts",
+    );
+  });
+
   it("exposes a local preview seed command", () => {
     expect(packageJson.scripts["preview:seed"]).toBe(
       "tsx scripts/seed-local-preview.ts",

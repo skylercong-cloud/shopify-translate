@@ -44,6 +44,12 @@ This guide targets a personal, password-protected deployment on a mainland China
 
 7. Keep model provider API keys out of `.env.production`. Add or replace them from the protected `/admin` screen after login.
 
+Run the local preflight before starting the stack. It checks required deployment files and fails if `.env.production` still contains template placeholder values:
+
+```bash
+corepack pnpm deploy:preflight
+```
+
 ## First Deployment
 
 Build and start the stack:

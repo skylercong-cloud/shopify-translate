@@ -181,13 +181,19 @@ corepack pnpm backup:verify
    cp .env.production.example .env.production
    ```
 
-2. 构建并启动：
+2. 运行生产预检，确认部署文件存在且 `.env.production` 不再使用示例占位符：
+
+   ```bash
+   corepack pnpm deploy:preflight
+   ```
+
+3. 构建并启动：
 
    ```bash
    docker compose --env-file .env.production -f compose.production.yaml up -d --build
    ```
 
-3. 执行迁移并设置登录密码：
+4. 执行迁移并设置登录密码：
 
    ```bash
    docker compose --env-file .env.production -f compose.production.yaml exec web corepack pnpm db:migrate
