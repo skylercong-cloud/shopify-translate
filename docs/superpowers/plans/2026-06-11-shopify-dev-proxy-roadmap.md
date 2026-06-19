@@ -114,9 +114,9 @@ Exit criteria:
 ## Phase 4: Focused Reader And Unified Search
 
 Status: Phase 4A focused reader surface and the initial Phase 4B unified cached
-search were implemented and browser verified on June 18, 2026. Dedicated
-PostgreSQL full-text/trigram index optimization remains a follow-up after
-behavior is measured against a larger cached corpus.
+search were implemented and browser verified on June 18, 2026. PostgreSQL
+`pg_trgm` GIN indexes and bounded SQL search candidates were added on June 19,
+2026 so cached bilingual search can scale without an external search service.
 
 Deliverables:
 
@@ -126,6 +126,7 @@ Deliverables:
 - Translation-state badges and official-source links.
 - Chinese application-layer tokenization.
 - PostgreSQL English full-text, trigram, Chinese token, and identifier search.
+- Bounded indexed search candidates before application-layer page ranking.
 - Mixed-language search ranking and language-specific snippets.
 - On-demand fetch/translation trigger for uncached pages.
 

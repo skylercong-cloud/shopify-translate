@@ -1,4 +1,4 @@
-import { and, eq, ilike, or } from "drizzle-orm";
+import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import type * as schema from "@/db/schema";
@@ -43,6 +43,14 @@ const SCORE: Record<SearchMatchKind, number> = {
   translation: 80,
   source: 70,
 };
+
+export function candidateLimitForSearchLimit(limit: number): number {
+  if (limit <= 0) {
+    return 0;
+  }
+
+  return Math.min(1000, Math.max(50, Math.trunc(limit) * 25));
+}
 
 function containsFolded(value: string | null, query: string): boolean {
   return value?.toLocaleLowerCase().includes(query.toLocaleLowerCase()) ?? false;
@@ -109,6 +117,7 @@ export function createSearchRepository(db: Database) {
       }
 
       const pattern = buildLikePattern(query);
+      const candidateLimit = candidateLimitForSearchLimit(limit);
       const rows = await db
         .select({
           pageId: sourcePages.id,
@@ -146,7 +155,18 @@ export function createSearchRepository(db: Database) {
               ilike(translationRevisions.translatedText, pattern),
             ),
           ),
-        );
+        )
+        .orderBy(
+          sql`case
+            when ${sourcePages.title} ilike ${pattern} then 0
+            when ${sourcePages.path} ilike ${pattern} then 1
+            when ${translationRevisions.translatedText} ilike ${pattern} then 2
+            else 3
+          end`,
+          asc(sourcePages.path),
+          asc(contentBlocks.ordinal),
+        )
+        .limit(candidateLimit);
 
       const byPage = new Map<string, ReaderSearchResult>();
       for (const row of rows) {
