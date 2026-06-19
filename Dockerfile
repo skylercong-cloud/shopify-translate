@@ -4,9 +4,9 @@ FROM node:22-alpine AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
+RUN apk add --no-cache libc6-compat postgresql-client
 
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
@@ -31,11 +31,10 @@ COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./.next/standalone
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/.next/static ./.next/standalone/.next/static
 
 USER nextjs
 
 EXPOSE 3000
 
 CMD ["node", ".next/standalone/server.js"]
-

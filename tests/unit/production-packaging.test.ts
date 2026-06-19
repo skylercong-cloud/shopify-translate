@@ -22,9 +22,13 @@ describe("production packaging", () => {
     expect(dockerfile).toContain("FROM node:22-alpine AS base");
     expect(dockerfile).toContain("FROM base AS deps");
     expect(dockerfile).toContain("corepack enable");
+    expect(dockerfile).toContain("postgresql-client");
     expect(dockerfile).toContain("pnpm install --frozen-lockfile");
     expect(dockerfile).toContain("corepack pnpm build");
     expect(dockerfile).toContain(".next/standalone");
+    expect(dockerfile).toContain(
+      "COPY --from=builder /app/.next/static ./.next/standalone/.next/static",
+    );
     expect(dockerfile).toContain("adduser");
     expect(dockerfile).toContain("USER nextjs");
     expect(dockerfile).toContain('CMD ["node", ".next/standalone/server.js"]');
