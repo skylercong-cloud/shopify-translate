@@ -1,0 +1,158 @@
+x-app-image: &app-image
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: shopify-dev-chinese-proxy:${APP_IMAGE_TAG:-local}
+
+x-app-environment: &app-environment
+  NODE_ENV: production
+  DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.production}
+  APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN in .env.production}
+  SESSION_DAYS: ${SESSION_DAYS:-30}
+  MODEL_KEY_ENCRYPTION_KEY: ${MODEL_KEY_ENCRYPTION_KEY:?Set MODEL_KEY_ENCRYPTION_KEY in .env.production}
+  SOURCE_REQUEST_CONCURRENCY: ${SOURCE_REQUEST_CONCURRENCY:-2}
+  SOURCE_REQUEST_INTERVAL_MS: ${SOURCE_REQUEST_INTERVAL_MS:-500}
+  SOURCE_TIMEOUT_MS: ${SOURCE_TIMEOUT_MS:-20000}
+  SOURCE_MAX_RESPONSE_BYTES: ${SOURCE_MAX_RESPONSE_BYTES:-8388608}
+  INGESTION_POLL_INTERVAL_MS: ${INGESTION_POLL_INTERVAL_MS:-1000}
+  INGESTION_LEASE_MS: ${INGESTION_LEASE_MS:-120000}
+  TRANSLATION_WORKER_ID: ${TRANSLATION_WORKER_ID:-translation-1}
+  TRANSLATION_POLL_INTERVAL_MS: ${TRANSLATION_POLL_INTERVAL_MS:-1000}
+  TRANSLATION_LEASE_MS: ${TRANSLATION_LEASE_MS:-180000}
+  TRANSLATION_HEARTBEAT_MS: ${TRANSLATION_HEARTBEAT_MS:-60000}
+  TRANSLATION_STALE_RESERVATION_MS: ${TRANSLATION_STALE_RESERVATION_MS:-300000}
+  TRANSLATION_STALE_REQUEST_MS: ${TRANSLATION_STALE_REQUEST_MS:-900000}
+  BACKUP_DIR: ${BACKUP_DIR:-/backups}
+  BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+  BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+  TZ: ${TZ:-Asia/Shanghai}
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shopify_docs}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - shopify_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    cpus: "0.80"
+    mem_limit: 768m
+
+  web:
+    <<: *app-image
+    restart: unless-stopped
+    command: node .next/standalone/server.js
+    environment:
+      <<: *app-environment
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    expose:
+      - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health/live >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    cpus: "0.80"
+    mem_limit: 1g
+
+  worker:
+    <<: *app-image
+    restart: unless-stopped
+    command: corepack pnpm worker
+    environment:
+      <<: *app-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ps | grep -F 'src/worker/main.ts' | grep -v grep >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    cpus: "0.40"
+    mem_limit: 512m
+
+  translation-worker:
+    <<: *app-image
+    restart: unless-stopped
+    command: corepack pnpm translation-worker
+    environment:
+      <<: *app-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ps | grep -F 'src/worker/translation-main.ts' | grep -v grep >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    cpus: "0.60"
+    mem_limit: 768m
+
+  backup:
+    <<: *app-image
+    restart: unless-stopped
+    command: sh -c 'while true; do corepack pnpm backup; sleep "$${BACKUP_INTERVAL_SECONDS:-86400}"; done'
+    environment:
+      <<: *app-environment
+    volumes:
+      - shopify_backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "test -d \"$${BACKUP_DIR:-/backups}\" || exit 1"]
+      interval: 1m
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    cpus: "0.20"
+    mem_limit: 512m
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN in .env.production}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2019/config/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    cpus: "0.20"
+    mem_limit: 256m
+
+volumes:
+  shopify_postgres_data:
+  shopify_backups:
+  caddy_data:
+  caddy_config:
+

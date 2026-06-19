@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /beta/
+Disallow: /docs/api/shipping-partner-platform/
+Sitemap: https://shopify.dev/sitemap.xml
