@@ -105,6 +105,14 @@ services:
     cpus: "0.60"
     mem_limit: 768m
 
+  backup-init:
+    <<: *app-image
+    restart: "no"
+    user: "0:0"
+    command: ["chown", "nextjs:nodejs", "/backups"]
+    volumes:
+      - shopify_backups:/backups
+
   backup:
     <<: *app-image
     restart: unless-stopped
@@ -114,6 +122,8 @@ services:
     volumes:
       - shopify_backups:/backups
     depends_on:
+      backup-init:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     healthcheck:

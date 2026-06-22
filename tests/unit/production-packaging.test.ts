@@ -55,6 +55,7 @@ describe("production packaging", () => {
       "web:",
       "worker:",
       "translation-worker:",
+      "backup-init:",
       "backup:",
       "db:",
       "caddy:",
@@ -63,6 +64,8 @@ describe("production packaging", () => {
     }
 
     const dbService = readComposeService(compose, "db");
+    const backupInitService = readComposeService(compose, "backup-init");
+    const backupService = readComposeService(compose, "backup");
     const caddyService = readComposeService(compose, "caddy");
 
     expect(compose).toContain("postgres:16-alpine");
@@ -76,6 +79,11 @@ describe("production packaging", () => {
     expect(compose).toContain("caddy_data:");
     expect(compose).toContain("caddy_config:");
     expect(dbService).not.toContain("ports:");
+    expect(backupInitService).toContain('user: "0:0"');
+    expect(backupInitService).toContain(
+      'command: ["chown", "nextjs:nodejs", "/backups"]',
+    );
+    expect(backupService).toContain("condition: service_completed_successfully");
     expect(caddyService).toContain('"80:80"');
     expect(caddyService).toContain('"443:443"');
   });
