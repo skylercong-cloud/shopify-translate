@@ -1,3 +1,5 @@
+import { gzipSync } from "node:zlib";
+
 import { describe, expect, it, vi } from "vitest";
 
 import { IngestionError } from "@/modules/ingestion/errors";
@@ -275,6 +277,85 @@ describe("source client", () => {
     expect(new Headers(init?.headers).get("accept")).toBe(
       "application/xml, text/xml, */*;q=0.1",
     );
+  });
+
+  it("decompresses an official gzip Sitemap within the response limit", async () => {
+    const body = "<?xml version=\"1.0\"?><urlset />";
+    const compressed = gzipSync(body);
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(compressed, {
+        headers: { "content-type": "application/x-gzip" },
+      }),
+    );
+
+    await expect(
+      clientWith(fetchImpl).fetchTextResource(
+        "https://shopify.dev/sitemap_standard.xml.gz",
+      ),
+    ).resolves.toMatchObject({
+      contentType: "application/x-gzip",
+      body,
+      bytes: compressed.byteLength,
+    });
+  });
+
+  it("rejects malformed or oversized decompressed gzip resources", async () => {
+    const malformedClient = clientWith(
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response("not gzip", {
+          headers: { "content-type": "application/x-gzip" },
+        }),
+      ),
+    );
+    await expect(
+      malformedClient.fetchTextResource(
+        "https://shopify.dev/sitemap_standard.xml.gz",
+      ),
+    ).rejects.toMatchObject({ code: "source_compression_invalid" });
+
+    const compressed = gzipSync("x".repeat(2_048));
+    const oversizedClient = clientWith(
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(compressed, {
+          headers: { "content-type": "application/gzip" },
+        }),
+      ),
+      { maxResponseBytes: 1_024 },
+    );
+    await expect(
+      oversizedClient.fetchTextResource(
+        "https://shopify.dev/sitemap_standard.xml.gz",
+      ),
+    ).rejects.toMatchObject({ code: "source_response_too_large" });
+  });
+
+  it("fetches the configured Sitemap mirror through its own allowlist", async () => {
+    const mirrorUrl =
+      "https://raw.githubusercontent.com/skylercong-cloud/shopify-translate/sitemap-cache/shopify-sitemap.xml";
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response("<urlset />", {
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      }),
+    );
+
+    await expect(
+      clientWith(fetchImpl).fetchSitemapMirror(mirrorUrl),
+    ).resolves.toMatchObject({
+      finalUrl: mirrorUrl,
+      contentType: "text/plain",
+      body: "<urlset />",
+    });
+
+    const redirectingFetch = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: { location: "https://example.com/sitemap.xml" },
+      }),
+    );
+    await expect(
+      clientWith(redirectingFetch).fetchSitemapMirror(mirrorUrl),
+    ).rejects.toMatchObject({ code: "source_url_not_allowed" });
+    expect(redirectingFetch).toHaveBeenCalledOnce();
   });
 
   it("wraps network failures as retryable ingestion errors", async () => {

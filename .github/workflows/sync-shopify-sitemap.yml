@@ -1,0 +1,125 @@
+name: Sync Shopify Sitemap mirror
+
+on:
+  schedule:
+    - cron: "17 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shopify-sitemap-mirror
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITEMAP_GZIP: ${{ runner.temp }}/sitemap_standard.xml.gz
+      SITEMAP_XML: ${{ runner.temp }}/shopify-sitemap.xml
+      MIRROR_DIR: ${{ runner.temp }}/sitemap-cache
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download and decompress official Sitemap
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --retry 4 --retry-all-errors --connect-timeout 20 --max-time 180 \
+            --header 'Accept: application/gzip, application/x-gzip, */*;q=0.1' \
+            --user-agent 'ShopifyDocsSitemapMirror/0.1' \
+            --output "$SITEMAP_GZIP" \
+            https://shopify.dev/sitemap_standard.xml.gz
+          gzip --test "$SITEMAP_GZIP"
+          gzip --decompress --stdout "$SITEMAP_GZIP" > "$SITEMAP_XML"
+
+      - name: Validate public Shopify docs URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$MIRROR_DIR"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          from xml.etree import ElementTree
+
+          source = Path(os.environ["SITEMAP_XML"])
+          destination = Path(os.environ["MIRROR_DIR"])
+          root = ElementTree.parse(source).getroot()
+          if root.tag.rsplit("}", 1)[-1] != "urlset":
+              raise SystemExit("Expected one Sitemap URL set")
+
+          locations = []
+          for url_entry in list(root):
+              loc = next(
+                  (
+                      element
+                      for element in url_entry.iter()
+                      if element.tag.rsplit("}", 1)[-1] == "loc" and element.text
+                  ),
+                  None,
+              )
+              if loc is None:
+                  root.remove(url_entry)
+                  continue
+              value = loc.text.strip()
+              parsed = urlsplit(value)
+              if (
+                  parsed.scheme != "https"
+                  or parsed.netloc != "shopify.dev"
+                  or parsed.query
+                  or parsed.fragment
+              ):
+                  raise SystemExit(f"Rejected unsafe Sitemap URL: {value}")
+              if not (parsed.path == "/docs" or parsed.path.startswith("/docs/")):
+                  root.remove(url_entry)
+                  continue
+              locations.append(value)
+
+          if not locations:
+              raise SystemExit("Sitemap contains no Shopify docs URLs")
+
+          namespace = root.tag.partition("}")[0].removeprefix("{")
+          if namespace:
+              ElementTree.register_namespace("", namespace)
+          mirror = destination / "shopify-sitemap.xml"
+          ElementTree.ElementTree(root).write(
+              mirror,
+              encoding="utf-8",
+              xml_declaration=True,
+          )
+          payload = mirror.read_bytes()
+          metadata = {
+              "generatedAt": datetime.now(timezone.utc).isoformat(),
+              "sha256": hashlib.sha256(payload).hexdigest(),
+              "urlCount": len(locations),
+              "upstream": "https://shopify.dev/sitemap_standard.xml.gz",
+          }
+          (destination / "metadata.json").write_text(
+              json.dumps(metadata, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(metadata))
+          PY
+
+      - name: Publish orphan mirror branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git switch --orphan sitemap-cache-publish
+          git rm --recursive --force . || true
+          cp "$MIRROR_DIR/shopify-sitemap.xml" ./shopify-sitemap.xml
+          cp "$MIRROR_DIR/metadata.json" ./metadata.json
+          git add shopify-sitemap.xml metadata.json
+          git commit --message "chore: refresh Shopify Sitemap mirror"
+          git push --force origin HEAD:sitemap-cache

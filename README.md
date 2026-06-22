@@ -228,6 +228,14 @@ corepack pnpm build
 corepack pnpm exec playwright install chromium
 ```
 
+## Sitemap 镜像
+
+- 后台采集始终优先请求 Shopify.dev 官方 Sitemap。
+- 如果服务器到官方 gzip Sitemap 的 CDN 路由失败，可通过
+  `SOURCE_SITEMAP_MIRROR_URL` 回退到 GitHub Actions 每日生成的公开 XML 镜像。
+- 镜像仅包含经过校验的 `https://shopify.dev/docs/**` URL，不包含数据库、
+  模型 API Key 或译文。首次使用步骤见 [生产部署文档](docs/deployment.md)。
+
 ## 健康检查
 
 - `GET /api/health/live`：应用进程存活

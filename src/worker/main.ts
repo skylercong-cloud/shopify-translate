@@ -29,6 +29,7 @@ async function main(): Promise<void> {
     ingestionRepository,
     jobRepository,
     sourceClient,
+    sitemapMirrorUrl: env.SOURCE_SITEMAP_MIRROR_URL,
     now: () => new Date(),
   });
   const scheduler = createIngestionScheduler({

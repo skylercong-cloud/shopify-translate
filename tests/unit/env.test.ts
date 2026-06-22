@@ -47,6 +47,39 @@ describe("parseEnv", () => {
     });
   });
 
+  it("parses an optional GitHub raw Sitemap mirror URL", () => {
+    const mirrorUrl =
+      "https://raw.githubusercontent.com/skylercong-cloud/shopify-translate/sitemap-cache/shopify-sitemap.xml";
+
+    expect(
+      parseEnv({
+        ...validEnv,
+        SOURCE_SITEMAP_MIRROR_URL: mirrorUrl,
+      }),
+    ).toMatchObject({ SOURCE_SITEMAP_MIRROR_URL: mirrorUrl });
+    expect(
+      parseEnv({
+        ...validEnv,
+        SOURCE_SITEMAP_MIRROR_URL: "",
+      }).SOURCE_SITEMAP_MIRROR_URL,
+    ).toBeUndefined();
+  });
+
+  it.each([
+    "http://raw.githubusercontent.com/owner/repo/ref/sitemap.xml",
+    "https://github.com/owner/repo/raw/ref/sitemap.xml",
+    "https://raw.githubusercontent.com/owner/repo/ref/sitemap.json",
+    "https://raw.githubusercontent.com/owner/repo/ref/sitemap.xml?token=secret",
+    "https://user:pass@raw.githubusercontent.com/owner/repo/ref/sitemap.xml",
+  ])("rejects an unsafe Sitemap mirror URL: %s", (mirrorUrl) => {
+    expect(() =>
+      parseEnv({
+        ...validEnv,
+        SOURCE_SITEMAP_MIRROR_URL: mirrorUrl,
+      }),
+    ).toThrow("SOURCE_SITEMAP_MIRROR_URL");
+  });
+
   it("rejects an invalid application origin", () => {
     expect(() =>
       parseEnv({ ...validEnv, APP_ORIGIN: "not-a-url" }),

@@ -74,6 +74,7 @@ describe("production packaging", () => {
     expect(compose).toContain("corepack pnpm worker");
     expect(compose).toContain("corepack pnpm translation-worker");
     expect(compose).toContain("corepack pnpm backup");
+    expect(compose).toContain("SOURCE_SITEMAP_MIRROR_URL");
     expect(compose).toContain("shopify_postgres_data:");
     expect(compose).toContain("shopify_backups:");
     expect(compose).toContain("caddy_data:");
@@ -99,6 +100,7 @@ describe("production packaging", () => {
       "SESSION_DAYS=30",
       "MODEL_KEY_ENCRYPTION_KEY=",
       "SOURCE_REQUEST_CONCURRENCY=",
+      "SOURCE_SITEMAP_MIRROR_URL=",
       "INGESTION_POLL_INTERVAL_MS=",
       "TRANSLATION_WORKER_ID=",
       "TRANSLATION_POLL_INTERVAL_MS=",
@@ -112,6 +114,21 @@ describe("production packaging", () => {
     expect(env).not.toContain("sk-");
     expect(env).not.toContain("phase-one-test-password");
     expect(env).not.toContain("ADMIN_PASSWORD");
+  });
+
+  it("publishes a validated daily Sitemap mirror without application secrets", () => {
+    const workflowPath = ".github/workflows/sync-shopify-sitemap.yml";
+    expect(existsSync(resolve(process.cwd(), workflowPath))).toBe(true);
+
+    const workflow = readWorkspaceFile(workflowPath);
+    expect(workflow).toContain("schedule:");
+    expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).toContain("contents: write");
+    expect(workflow).toContain("https://shopify.dev/sitemap_standard.xml.gz");
+    expect(workflow).toContain("sitemap-cache");
+    expect(workflow).toContain("shopify-sitemap.xml");
+    expect(workflow).not.toContain("DATABASE_URL");
+    expect(workflow).not.toContain("MODEL_KEY_ENCRYPTION_KEY");
   });
 
   it("terminates TLS with Caddy and sends baseline security headers", () => {

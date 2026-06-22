@@ -26,6 +26,33 @@ const appOriginSchema = z.string().url().refine(
   },
 );
 
+const sitemapMirrorUrlSchema = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z
+    .string()
+    .url()
+    .refine(
+      (value) => {
+        const url = new URL(value);
+        const pathSegments = url.pathname.split("/").filter(Boolean);
+        return (
+          url.origin === "https://raw.githubusercontent.com" &&
+          url.username === "" &&
+          url.password === "" &&
+          url.search === "" &&
+          url.hash === "" &&
+          pathSegments.length >= 4 &&
+          url.pathname.toLowerCase().endsWith(".xml")
+        );
+      },
+      {
+        message:
+          "must be a query-free HTTPS XML URL on raw.githubusercontent.com",
+      },
+    )
+    .optional(),
+);
+
 const envSchema = z
   .object({
     NODE_ENV: z
@@ -63,6 +90,7 @@ const envSchema = z
       .positive()
       .max(16 * 1024 * 1024)
       .default(8 * 1024 * 1024),
+    SOURCE_SITEMAP_MIRROR_URL: sitemapMirrorUrlSchema,
     INGESTION_POLL_INTERVAL_MS: z.coerce
       .number()
       .int()

@@ -3,7 +3,10 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
 
 import { createRobotsPolicy } from "@/modules/ingestion/robots-policy";
-import { discoverSitemapUrls } from "@/modules/ingestion/sitemap";
+import {
+  discoverSitemapUrls,
+  parseSitemapMirrorUrls,
+} from "@/modules/ingestion/sitemap";
 
 const robots = createRobotsPolicy("User-agent: *\nDisallow:");
 
@@ -158,5 +161,30 @@ Disallow: /docs/private/
         lastModifiedAt: undefined,
       },
     ]);
+  });
+
+  it("parses a mirror as one non-empty URL set", () => {
+    const body = `
+      <urlset>
+        <url><loc>https://shopify.dev/docs/apps</loc></url>
+        <url><loc>https://shopify.dev/changelog</loc></url>
+      </urlset>
+    `;
+
+    expect(parseSitemapMirrorUrls({ body, robots })).toEqual([
+      {
+        canonicalUrl: "https://shopify.dev/docs/apps",
+        lastModifiedAt: undefined,
+      },
+    ]);
+    expect(() =>
+      parseSitemapMirrorUrls({
+        body: "<sitemapindex><sitemap /></sitemapindex>",
+        robots,
+      }),
+    ).toThrow(/URL set/i);
+    expect(() =>
+      parseSitemapMirrorUrls({ body: "<urlset />", robots }),
+    ).toThrow(/no approved/i);
   });
 });

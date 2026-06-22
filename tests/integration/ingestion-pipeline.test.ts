@@ -52,6 +52,7 @@ afterEach(async () => {
 
 async function createHarness(
   routes: Parameters<typeof startFixtureServer>[0] = {},
+  sitemapMirrorUrl?: string,
 ) {
   const server = await startFixtureServer(routes);
   servers.push(server);
@@ -68,6 +69,7 @@ async function createHarness(
     ingestionRepository,
     jobRepository,
     sourceClient,
+    sitemapMirrorUrl,
     now: () => currentTime,
   });
   return {
@@ -169,6 +171,98 @@ describe("ingestion pipeline", () => {
     await expect(harness.service.discoverPages()).rejects.toThrow(
       /robots policy is unavailable/i,
     );
+  });
+
+  it("uses the Sitemap mirror only after official discovery fails", async () => {
+    const id = randomUUID();
+    const canonicalUrl = `https://shopify.dev/docs/mirrored-${id}`;
+    const mirrorPath =
+      "/skylercong-cloud/shopify-translate/sitemap-cache/shopify-sitemap.xml";
+    const mirrorUrl = `https://raw.githubusercontent.com${mirrorPath}`;
+    createdUrls.push(canonicalUrl);
+    const harness = await createHarness(
+      {
+        "/robots.txt": {
+          headers: { "content-type": "text/plain" },
+          body: "User-agent: *\nDisallow:\nSitemap: https://shopify.dev/sitemap.xml",
+        },
+        "/sitemap.xml": {
+          status: 500,
+          headers: { "content-type": "text/plain" },
+          body: "upstream failed",
+        },
+        [mirrorPath]: {
+          headers: { "content-type": "text/plain" },
+          body: `<urlset><url><loc>${canonicalUrl}</loc></url></urlset>`,
+        },
+      },
+      mirrorUrl,
+    );
+
+    await harness.service.refreshRobotsPolicy();
+    await expect(harness.service.discoverPages()).resolves.toEqual({
+      discovered: 1,
+      queued: 1,
+    });
+    expect(harness.server.requests.map((request) => request.path)).toEqual([
+      "/robots.txt",
+      "/sitemap.xml",
+      mirrorPath,
+    ]);
+  });
+
+  it("does not fetch the Sitemap mirror when official discovery succeeds", async () => {
+    const id = randomUUID();
+    const canonicalUrl = `https://shopify.dev/docs/official-${id}`;
+    const mirrorPath =
+      "/skylercong-cloud/shopify-translate/sitemap-cache/shopify-sitemap.xml";
+    createdUrls.push(canonicalUrl);
+    const harness = await createHarness(
+      {
+        "/robots.txt": {
+          headers: { "content-type": "text/plain" },
+          body: "User-agent: *\nDisallow:\nSitemap: https://shopify.dev/sitemap.xml",
+        },
+        "/sitemap.xml": {
+          headers: { "content-type": "application/xml" },
+          body: `<urlset><url><loc>${canonicalUrl}</loc></url></urlset>`,
+        },
+        [mirrorPath]: {
+          headers: { "content-type": "text/plain" },
+          body: "<urlset />",
+        },
+      },
+      `https://raw.githubusercontent.com${mirrorPath}`,
+    );
+
+    await harness.service.refreshRobotsPolicy();
+    await expect(harness.service.discoverPages()).resolves.toEqual({
+      discovered: 1,
+      queued: 1,
+    });
+    expect(harness.server.requests.map((request) => request.path)).toEqual([
+      "/robots.txt",
+      "/sitemap.xml",
+    ]);
+  });
+
+  it("does not hide official discovery failure without a mirror", async () => {
+    const harness = await createHarness({
+      "/robots.txt": {
+        headers: { "content-type": "text/plain" },
+        body: "User-agent: *\nDisallow:\nSitemap: https://shopify.dev/sitemap.xml",
+      },
+      "/sitemap.xml": {
+        status: 500,
+        headers: { "content-type": "text/plain" },
+        body: "upstream failed",
+      },
+    });
+
+    await harness.service.refreshRobotsPolicy();
+    await expect(harness.service.discoverPages()).rejects.toMatchObject({
+      code: "source_server_error",
+    });
   });
 
   it("records a 304 without creating another page version", async () => {

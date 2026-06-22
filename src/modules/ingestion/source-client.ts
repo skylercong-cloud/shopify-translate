@@ -1,3 +1,5 @@
+import { gunzipSync } from "node:zlib";
+
 import {
   MAX_REDIRECTS,
   MAX_RESPONSE_BYTES,
@@ -8,9 +10,11 @@ import { IngestionError } from "@/modules/ingestion/errors";
 import type { SourceFormat } from "@/modules/ingestion/types";
 import {
   canonicalizeSameOriginResourceUrl,
+  canonicalizeSitemapMirrorUrl,
   canonicalizeShopifyDocsUrl,
   resolveApprovedRedirect,
   resolveSameOriginResourceRedirect,
+  resolveSitemapMirrorRedirect,
 } from "@/modules/ingestion/url-policy";
 
 const TEXT_CONTENT_TYPES = new Set([
@@ -27,6 +31,10 @@ const RESOURCE_CONTENT_TYPES = new Set([
   ...TEXT_CONTENT_TYPES,
   "application/xml",
   "text/xml",
+]);
+const GZIP_CONTENT_TYPES = new Set([
+  "application/gzip",
+  "application/x-gzip",
 ]);
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
@@ -61,6 +69,12 @@ export type SourceClient = {
     lastModified?: string;
   }): Promise<SourceFetchResult>;
   fetchTextResource(url: string): Promise<{
+    finalUrl: string;
+    contentType: string;
+    body: string;
+    bytes: number;
+  }>;
+  fetchSitemapMirror(url: string): Promise<{
     finalUrl: string;
     contentType: string;
     body: string;
@@ -134,6 +148,7 @@ type RawResponse = {
   status: number;
   headers: Headers;
   body: string;
+  rawBody: Uint8Array;
   bytes: number;
 };
 
@@ -172,11 +187,12 @@ function parseRetryAfter(
 function classifyStatus(
   response: FollowedResponse,
   now: () => number,
+  sourceName = "Shopify.dev",
 ): void {
   if (response.status === 429) {
     throw new IngestionError(
       "source_rate_limited",
-      "Shopify.dev rate limited the source request",
+      `${sourceName} rate limited the source request`,
       true,
       parseRetryAfter(response.headers.get("retry-after"), now),
     );
@@ -184,20 +200,20 @@ function classifyStatus(
   if (response.status >= 500 && response.status <= 599) {
     throw new IngestionError(
       "source_server_error",
-      `Shopify.dev returned HTTP ${response.status}`,
+      `${sourceName} returned HTTP ${response.status}`,
       true,
     );
   }
   if (response.status === 401 || response.status === 403) {
     throw new IngestionError(
       "source_access_denied",
-      `Shopify.dev returned HTTP ${response.status}`,
+      `${sourceName} returned HTTP ${response.status}`,
     );
   }
   if (response.status < 200 || response.status > 299) {
     throw new IngestionError(
       "source_http_error",
-      `Shopify.dev returned HTTP ${response.status}`,
+      `${sourceName} returned HTTP ${response.status}`,
     );
   }
 }
@@ -236,7 +252,7 @@ function resolveTextRepresentationRedirect(
 async function readBoundedBody(
   response: Response,
   maxResponseBytes: number,
-): Promise<{ body: string; bytes: number }> {
+): Promise<{ body: string; rawBody: Uint8Array; bytes: number }> {
   const declaredLength = Number(response.headers.get("content-length"));
   if (
     Number.isFinite(declaredLength) &&
@@ -249,7 +265,7 @@ async function readBoundedBody(
   }
 
   if (!response.body) {
-    return { body: "", bytes: 0 };
+    return { body: "", rawBody: new Uint8Array(), bytes: 0 };
   }
 
   const reader = response.body.getReader();
@@ -279,8 +295,37 @@ async function readBoundedBody(
 
   return {
     body: new TextDecoder().decode(combined),
+    rawBody: combined,
     bytes,
   };
+}
+
+function decodeGzipBody(
+  compressed: Uint8Array,
+  maxResponseBytes: number,
+): string {
+  try {
+    const decompressed = gunzipSync(compressed, {
+      maxOutputLength: maxResponseBytes,
+    });
+    return new TextDecoder().decode(decompressed);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ERR_BUFFER_TOO_LARGE"
+    ) {
+      throw new IngestionError(
+        "source_response_too_large",
+        "Decompressed source response exceeded the configured size limit",
+      );
+    }
+    throw new IngestionError(
+      "source_compression_invalid",
+      "Source returned an invalid gzip response",
+    );
+  }
 }
 
 export function createSourceClient(
@@ -310,7 +355,7 @@ export function createSourceClient(
           signal: controller.signal,
         });
         const body = REDIRECT_STATUSES.has(response.status)
-          ? { body: "", bytes: 0 }
+          ? { body: "", rawBody: new Uint8Array(), bytes: 0 }
           : await readBoundedBody(response, maxResponseBytes);
         return {
           status: response.status,
@@ -496,10 +541,41 @@ export function createSourceClient(
       });
       classifyStatus(response, now);
       const contentType = normalizeContentType(response.headers);
-      if (!RESOURCE_CONTENT_TYPES.has(contentType)) {
+      if (
+        !RESOURCE_CONTENT_TYPES.has(contentType) &&
+        !GZIP_CONTENT_TYPES.has(contentType)
+      ) {
         throw new IngestionError(
           "source_content_type_invalid",
           `Text resource returned unsupported Content-Type ${contentType || "(missing)"}`,
+        );
+      }
+      return {
+        finalUrl: response.finalUrl,
+        contentType,
+        body: GZIP_CONTENT_TYPES.has(contentType)
+          ? decodeGzipBody(response.rawBody, maxResponseBytes)
+          : response.body,
+        bytes: response.bytes,
+      };
+    },
+
+    async fetchSitemapMirror(inputUrl) {
+      const requestedUrl = canonicalizeSitemapMirrorUrl(inputUrl);
+      const response = await followRedirects({
+        url: requestedUrl,
+        headers: new Headers({
+          accept: "application/xml, text/xml, text/plain;q=0.9",
+          "user-agent": SOURCE_USER_AGENT,
+        }),
+        resolveRedirect: resolveSitemapMirrorRedirect,
+      });
+      classifyStatus(response, now, "Sitemap mirror");
+      const contentType = normalizeContentType(response.headers);
+      if (!RESOURCE_CONTENT_TYPES.has(contentType)) {
+        throw new IngestionError(
+          "source_content_type_invalid",
+          `Sitemap mirror returned unsupported Content-Type ${contentType || "(missing)"}`,
         );
       }
       return {

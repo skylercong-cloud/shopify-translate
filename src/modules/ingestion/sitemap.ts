@@ -41,6 +41,103 @@ function sitemapError(code: string, message: string): IngestionError {
   return new IngestionError(code, message);
 }
 
+function parseSitemapDocument(body: string): Record<string, unknown> {
+  try {
+    return parser.parse(body) as Record<string, unknown>;
+  } catch {
+    throw sitemapError("sitemap_xml_invalid", "Sitemap XML is invalid");
+  }
+}
+
+function collectUrlSetEntries(input: {
+  urlSet: { url?: unknown };
+  robots: RobotsPolicy;
+  discovered: Map<string, DiscoveredPage>;
+  candidatesRead: number;
+  maxCandidates: number;
+}): number {
+  let candidatesRead = input.candidatesRead;
+  for (const entry of asArray(input.urlSet.url)) {
+    candidatesRead += 1;
+    if (candidatesRead > input.maxCandidates) {
+      throw sitemapError(
+        "sitemap_candidate_limit",
+        "Sitemap discovery exceeded the configured candidate limit",
+      );
+    }
+    if (!entry || typeof entry !== "object") continue;
+    const loc = textValue((entry as { loc?: unknown }).loc);
+    if (!loc) continue;
+
+    let canonicalUrl: string;
+    try {
+      canonicalUrl = canonicalizeShopifyDocsUrl(loc);
+    } catch {
+      continue;
+    }
+    if (!input.robots.isAllowed(canonicalUrl)) continue;
+
+    const lastModifiedAt = parseLastModified(
+      (entry as { lastmod?: unknown }).lastmod,
+    );
+    const existing = input.discovered.get(canonicalUrl);
+    if (
+      !existing ||
+      (lastModifiedAt &&
+        (!existing.lastModifiedAt || lastModifiedAt > existing.lastModifiedAt))
+    ) {
+      input.discovered.set(canonicalUrl, {
+        canonicalUrl,
+        lastModifiedAt: lastModifiedAt ?? existing?.lastModifiedAt,
+      });
+    }
+  }
+  return candidatesRead;
+}
+
+function sortedPages(
+  discovered: Map<string, DiscoveredPage>,
+): DiscoveredPage[] {
+  return Array.from(discovered.values()).sort((left, right) =>
+    left.canonicalUrl.localeCompare(right.canonicalUrl),
+  );
+}
+
+export function parseSitemapMirrorUrls(input: {
+  body: string;
+  robots: RobotsPolicy;
+  maxCandidates?: number;
+}): DiscoveredPage[] {
+  const document = parseSitemapDocument(input.body);
+  if (!("urlset" in document)) {
+    throw sitemapError(
+      "sitemap_mirror_document_invalid",
+      "Sitemap mirror must contain one URL set",
+    );
+  }
+  const rawUrlSet = document.urlset;
+  const urlSet =
+    rawUrlSet && typeof rawUrlSet === "object"
+      ? (rawUrlSet as { url?: unknown })
+      : {};
+
+  const discovered = new Map<string, DiscoveredPage>();
+  collectUrlSetEntries({
+    urlSet,
+    robots: input.robots,
+    discovered,
+    candidatesRead: 0,
+    maxCandidates: input.maxCandidates ?? DEFAULT_LIMITS.maxCandidates,
+  });
+  if (discovered.size === 0) {
+    throw sitemapError(
+      "sitemap_mirror_empty",
+      "Sitemap mirror contains no approved Shopify docs pages",
+    );
+  }
+  return sortedPages(discovered);
+}
+
 export async function discoverSitemapUrls(input: {
   roots: string[];
   fetchResource: SourceClient["fetchTextResource"];
@@ -88,12 +185,7 @@ export async function discoverSitemapUrls(input: {
     visited.add(next.url);
     filesRead += 1;
     const response = await input.fetchResource(next.url);
-    let document: Record<string, unknown>;
-    try {
-      document = parser.parse(response.body) as Record<string, unknown>;
-    } catch {
-      throw sitemapError("sitemap_xml_invalid", "Sitemap XML is invalid");
-    }
+    const document = parseSitemapDocument(response.body);
 
     const index = document.sitemapindex as
       | { sitemap?: unknown }
@@ -129,45 +221,14 @@ export async function discoverSitemapUrls(input: {
       );
     }
 
-    for (const entry of asArray(urlSet.url)) {
-      candidatesRead += 1;
-      if (candidatesRead > limits.maxCandidates) {
-        throw sitemapError(
-          "sitemap_candidate_limit",
-          "Sitemap discovery exceeded the configured candidate limit",
-        );
-      }
-      if (!entry || typeof entry !== "object") continue;
-      const loc = textValue((entry as { loc?: unknown }).loc);
-      if (!loc) continue;
-
-      let canonicalUrl: string;
-      try {
-        canonicalUrl = canonicalizeShopifyDocsUrl(loc);
-      } catch {
-        continue;
-      }
-      if (!input.robots.isAllowed(canonicalUrl)) continue;
-
-      const lastModifiedAt = parseLastModified(
-        (entry as { lastmod?: unknown }).lastmod,
-      );
-      const existing = discovered.get(canonicalUrl);
-      if (
-        !existing ||
-        (lastModifiedAt &&
-          (!existing.lastModifiedAt ||
-            lastModifiedAt > existing.lastModifiedAt))
-      ) {
-        discovered.set(canonicalUrl, {
-          canonicalUrl,
-          lastModifiedAt: lastModifiedAt ?? existing?.lastModifiedAt,
-        });
-      }
-    }
+    candidatesRead = collectUrlSetEntries({
+      urlSet,
+      robots: input.robots,
+      discovered,
+      candidatesRead,
+      maxCandidates: limits.maxCandidates,
+    });
   }
 
-  return Array.from(discovered.values()).sort((left, right) =>
-    left.canonicalUrl.localeCompare(right.canonicalUrl),
-  );
+  return sortedPages(discovered);
 }

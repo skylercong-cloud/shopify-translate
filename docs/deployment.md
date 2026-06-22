@@ -50,6 +50,28 @@ Run the local preflight before starting the stack. It checks required deployment
 corepack pnpm deploy:preflight
 ```
 
+## Sitemap Mirror Bootstrap
+
+The ingestion worker always tries the official Shopify Sitemap first. When that
+CDN route fails, `SOURCE_SITEMAP_MIRROR_URL` supplies a daily decompressed copy
+from the repository's `sitemap-cache` branch.
+
+Before relying on the fallback for the first time:
+
+1. Open the repository's **Actions** page and select **Sync Shopify Sitemap mirror**.
+2. Choose **Run workflow** on `main` and wait for the job to finish.
+3. Confirm that the `sitemap-cache` branch contains `shopify-sitemap.xml` and
+   `metadata.json`.
+4. Keep this production value in `.env.production`:
+
+   ```dotenv
+   SOURCE_SITEMAP_MIRROR_URL=https://raw.githubusercontent.com/skylercong-cloud/shopify-translate/sitemap-cache/shopify-sitemap.xml
+   ```
+
+If the workflow cannot push, set repository **Actions > General > Workflow
+permissions** to **Read and write permissions**, then run it again. The workflow
+contains only public source URLs and does not use application or model secrets.
+
 ## First Deployment
 
 Build and start the stack:
@@ -194,3 +216,5 @@ If the failed release included a database migration, restore a backup made befor
 - Model API keys are configured after login in `/admin`; they are stored encrypted and only a key hint is shown.
 - If translation costs need to pause, disable both providers in `/admin`; cached pages remain readable.
 - Before changing `MODEL_KEY_ENCRYPTION_KEY`, follow the key-rotation steps in `docs/translation-operations.md`.
+- Sitemap discovery failures use the GitHub mirror only after the official source
+  fails. Rebuild and restart `worker` after changing `SOURCE_SITEMAP_MIRROR_URL`.

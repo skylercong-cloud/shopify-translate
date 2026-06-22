@@ -35,6 +35,33 @@ function requireQueryFree(url: URL): void {
   }
 }
 
+function requireSitemapMirror(url: URL): void {
+  const pathSegments = url.pathname.split("/").filter(Boolean);
+  if (
+    url.origin !== "https://raw.githubusercontent.com" ||
+    url.username !== "" ||
+    url.password !== "" ||
+    pathSegments.length < 4
+  ) {
+    throw new IngestionError(
+      "source_url_not_allowed",
+      "Sitemap mirror URL must use the approved GitHub raw origin",
+    );
+  }
+  if (!url.pathname.toLowerCase().endsWith(".xml")) {
+    throw new IngestionError(
+      "source_url_path_not_allowed",
+      "Sitemap mirror URL must identify an XML resource",
+    );
+  }
+  if (url.hash !== "") {
+    throw new IngestionError(
+      "source_url_fragment_not_allowed",
+      "Sitemap mirror URL must not include a fragment",
+    );
+  }
+}
+
 export function canonicalizeShopifyDocsUrl(input: string): string {
   const url = parseUrl(input);
   requireShopifyOrigin(url);
@@ -84,6 +111,22 @@ export function resolveSameOriginResourceRedirect(
   location: string,
 ): string {
   return canonicalizeSameOriginResourceUrl(
+    parseUrl(location, currentUrl).toString(),
+  );
+}
+
+export function canonicalizeSitemapMirrorUrl(input: string): string {
+  const url = parseUrl(input);
+  requireSitemapMirror(url);
+  requireQueryFree(url);
+  return url.toString();
+}
+
+export function resolveSitemapMirrorRedirect(
+  currentUrl: string,
+  location: string,
+): string {
+  return canonicalizeSitemapMirrorUrl(
     parseUrl(location, currentUrl).toString(),
   );
 }

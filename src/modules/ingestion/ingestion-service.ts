@@ -15,7 +15,10 @@ import {
   createRobotsPolicy,
   requireRobotsPolicy,
 } from "@/modules/ingestion/robots-policy";
-import { discoverSitemapUrls } from "@/modules/ingestion/sitemap";
+import {
+  discoverSitemapUrls,
+  parseSitemapMirrorUrls,
+} from "@/modules/ingestion/sitemap";
 import type {
   SourceClient,
   SourceFetchResult,
@@ -81,6 +84,7 @@ export function createIngestionService(deps: {
   ingestionRepository: IngestionRepository;
   jobRepository: JobRepository;
   sourceClient: SourceClient;
+  sitemapMirrorUrl?: string;
   now: () => Date;
 }) {
   async function loadRobotsPolicy() {
@@ -183,11 +187,33 @@ export function createIngestionService(deps: {
     }> {
       const robots = await loadRobotsPolicy();
       const discoveryStartedAt = deps.now();
-      const pages = await discoverSitemapUrls({
-        roots: robots.sitemapUrls,
-        fetchResource: deps.sourceClient.fetchTextResource,
-        robots,
-      });
+      let pages;
+      try {
+        pages = await discoverSitemapUrls({
+          roots: robots.sitemapUrls,
+          fetchResource: deps.sourceClient.fetchTextResource,
+          robots,
+        });
+      } catch (officialError) {
+        if (!deps.sitemapMirrorUrl) throw officialError;
+
+        try {
+          const mirror = await deps.sourceClient.fetchSitemapMirror(
+            deps.sitemapMirrorUrl,
+          );
+          pages = parseSitemapMirrorUrls({ body: mirror.body, robots });
+        } catch (mirrorError) {
+          const official = errorDetails(officialError);
+          const mirror = errorDetails(mirrorError);
+          throw new IngestionError(
+            "sitemap_mirror_failed",
+            `Official Sitemap discovery failed (${official.code}: ${official.message}); mirror fallback failed (${mirror.code}: ${mirror.message})`,
+            (officialError instanceof IngestionError &&
+              officialError.retryable) ||
+              (mirrorError instanceof IngestionError && mirrorError.retryable),
+          );
+        }
+      }
       await deps.ingestionRepository.upsertDiscoveredPages({
         discoveredAt: discoveryStartedAt,
         pages,

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canonicalizeSitemapMirrorUrl,
   canonicalizeShopifyDocsUrl,
   resolveApprovedRedirect,
   resolveSameOriginResourceRedirect,
+  resolveSitemapMirrorRedirect,
 } from "@/modules/ingestion/url-policy";
 
 describe("Shopify docs URL policy", () => {
@@ -66,6 +68,35 @@ describe("Shopify docs URL policy", () => {
         "https://shopify.dev/sitemap.xml",
         "/sitemaps/docs.xml?version=1",
       ),
+    ).toThrow();
+  });
+
+  it("allows only query-free XML resources on GitHub raw content", () => {
+    const mirrorUrl =
+      "https://raw.githubusercontent.com/skylercong-cloud/shopify-translate/sitemap-cache/shopify-sitemap.xml";
+
+    expect(canonicalizeSitemapMirrorUrl(mirrorUrl)).toBe(mirrorUrl);
+    expect(
+      resolveSitemapMirrorRedirect(
+        mirrorUrl,
+        "/skylercong-cloud/shopify-translate/sitemap-cache/next.xml",
+      ),
+    ).toBe(
+      "https://raw.githubusercontent.com/skylercong-cloud/shopify-translate/sitemap-cache/next.xml",
+    );
+    expect(() =>
+      canonicalizeSitemapMirrorUrl(
+        "https://raw.githubusercontent.com/owner/repo/ref/sitemap.xml?token=1",
+      ),
+    ).toThrow();
+    expect(() =>
+      canonicalizeSitemapMirrorUrl(
+        "https://raw.githubusercontent.com/owner/repo/ref/sitemap.json",
+      ),
+    ).toThrow();
+    expect(() => canonicalizeSitemapMirrorUrl(`${mirrorUrl}#generated`)).toThrow();
+    expect(() =>
+      resolveSitemapMirrorRedirect(mirrorUrl, "https://example.com/sitemap.xml"),
     ).toThrow();
   });
 });
