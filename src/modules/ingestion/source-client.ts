@@ -489,7 +489,7 @@ export function createSourceClient(
       const response = await followRedirects({
         url: requestedUrl,
         headers: new Headers({
-          accept: "text/plain, application/xml, text/xml",
+          accept: "application/xml, text/xml, */*;q=0.1",
           "user-agent": SOURCE_USER_AGENT,
         }),
         resolveRedirect: resolveSameOriginResourceRedirect,

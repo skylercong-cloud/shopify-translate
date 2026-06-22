@@ -270,6 +270,11 @@ describe("source client", () => {
       contentType: "application/xml",
       body: "<urlset />",
     });
+
+    const [, init] = fetchImpl.mock.calls[0];
+    expect(new Headers(init?.headers).get("accept")).toBe(
+      "application/xml, text/xml, */*;q=0.1",
+    );
   });
 
   it("wraps network failures as retryable ingestion errors", async () => {
