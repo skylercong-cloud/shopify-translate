@@ -13,6 +13,10 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Next.js loads server modules while collecting route metadata. These inert
+# builder-only values keep production credentials out of the image build.
+ENV DATABASE_URL=postgres://app:build-only@127.0.0.1:5432/shopify_docs
+ENV APP_ORIGIN=https://build.invalid
 RUN corepack pnpm build
 
 FROM base AS runner

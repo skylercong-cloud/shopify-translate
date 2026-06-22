@@ -9,7 +9,7 @@ function readWorkspaceFile(path: string) {
 
 function readComposeService(compose: string, service: string) {
   const match = new RegExp(
-    `\\n  ${service}:\\n([\\s\\S]*?)(?=\\n  [a-zA-Z0-9_-]+:\\n|\\nvolumes:|$)`,
+    `\\r?\\n  ${service}:\\r?\\n([\\s\\S]*?)(?=\\r?\\n  [a-zA-Z0-9_-]+:\\r?\\n|\\r?\\nvolumes:|$)`,
   ).exec(compose);
 
   return match?.[1] ?? "";
@@ -32,6 +32,20 @@ describe("production packaging", () => {
     expect(dockerfile).toContain("adduser");
     expect(dockerfile).toContain("USER nextjs");
     expect(dockerfile).toContain('CMD ["node", ".next/standalone/server.js"]');
+  });
+
+  it("provides non-secret environment values only while Next.js builds", () => {
+    const dockerfile = readWorkspaceFile("Dockerfile");
+    const builderStage = /FROM base AS builder([\s\S]*?)FROM base AS runner/.exec(
+      dockerfile,
+    )?.[1];
+
+    expect(builderStage).toContain(
+      "ENV DATABASE_URL=postgres://app:build-only@127.0.0.1:5432/shopify_docs",
+    );
+    expect(builderStage).toContain("ENV APP_ORIGIN=https://build.invalid");
+    expect(dockerfile).not.toContain("ARG DATABASE_URL");
+    expect(dockerfile).not.toContain("ARG APP_ORIGIN");
   });
 
   it("defines an internal production compose stack with persistent data", () => {
