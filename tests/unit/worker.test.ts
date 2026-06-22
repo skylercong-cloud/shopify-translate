@@ -68,7 +68,7 @@ describe("ingestion worker", () => {
     await expect(worker.runOnce()).resolves.toBe("worked");
     expect(deps.ingestionService.refreshRobotsPolicy).toHaveBeenCalledOnce();
     expect(deps.ingestionService.discoverPages).toHaveBeenCalledOnce();
-    expect(deps.scheduler.scheduleDailyPageRefreshes).toHaveBeenCalledWith(now);
+    expect(deps.scheduler.scheduleDailyPageRefreshes).not.toHaveBeenCalled();
     expect(deps.scheduler.ensureMaintenanceJobs).toHaveBeenCalledWith(
       new Date("2026-06-13T00:00:00Z"),
     );

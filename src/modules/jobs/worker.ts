@@ -104,7 +104,6 @@ export function createIngestionWorker(deps: {
         if (job.type === "discover_sitemap") {
           await deps.ingestionService.refreshRobotsPolicy();
           await deps.ingestionService.discoverPages();
-          await deps.scheduler.scheduleDailyPageRefreshes(deps.now());
           await deps.scheduler.ensureMaintenanceJobs(
             nextUtcDayStart(deps.now()),
           );
