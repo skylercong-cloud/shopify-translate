@@ -18,9 +18,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download and decompress official Sitemap
+        id: download
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -36,6 +38,7 @@ jobs:
           gzip --decompress --stdout "$SITEMAP_GZIP" > "$SITEMAP_XML"
 
       - name: Validate public Shopify docs URLs
+        if: steps.download.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -112,6 +115,7 @@ jobs:
           PY
 
       - name: Publish orphan mirror branch
+        if: steps.download.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -125,3 +129,18 @@ jobs:
           git add shopify-sitemap.xml metadata.json
           git commit --message "chore: refresh Shopify Sitemap mirror"
           git push --force origin HEAD:sitemap-cache
+
+      - name: Keep the existing mirror when Shopify blocks the runner
+        if: steps.download.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin sitemap-cache
+          git show FETCH_HEAD:shopify-sitemap.xml > /dev/null
+          echo "::warning::Shopify returned HTTP 400 to the GitHub runner; the existing validated mirror was retained."
+          {
+            echo "## Existing Sitemap mirror retained"
+            echo
+            echo "Shopify blocked the GitHub runner from downloading the gzip Sitemap."
+            echo "The validated sitemap-cache branch remains available for ingestion."
+          } >> "$GITHUB_STEP_SUMMARY"

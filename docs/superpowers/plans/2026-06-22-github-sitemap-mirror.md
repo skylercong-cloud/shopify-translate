@@ -59,9 +59,10 @@ is configured.
 - Test: `tests/unit/production-packaging.test.ts`
 
 Create a daily and manually triggered workflow using only GitHub checkout plus
-standard shell/Python tools. Validate XML and Shopify docs URLs, then publish the
-decompressed file to `sitemap-cache`. Document the first manual run, production
-environment value, worker rebuild, and verification commands.
+standard shell/Python tools. Validate XML and Shopify docs URLs before publishing
+the decompressed file to `sitemap-cache`. If Shopify blocks the GitHub runner,
+verify and retain the existing mirror with a visible warning. Document the
+production environment value, worker rebuild, and verification commands.
 
 ### Task 5: Verify and Publish
 

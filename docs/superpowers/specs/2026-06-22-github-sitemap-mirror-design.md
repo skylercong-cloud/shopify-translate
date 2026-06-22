@@ -27,17 +27,25 @@ fallback:
 
 ## Mirror Publication
 
-A scheduled GitHub Actions workflow downloads the official gzip Sitemap,
-decompresses and validates it, then force-updates an orphan `sitemap-cache`
-branch. Only the public XML URL set and generation metadata are published. The
-workflow does not receive application secrets, model keys, database credentials,
-or translated content.
+The initial orphan `sitemap-cache` branch is generated from an official gzip
+Sitemap downloaded through a network path that Shopify accepts. The input is
+decompressed, filtered to approved `/docs` URLs, and validated before publishing.
+Only the public XML URL set and generation metadata are stored.
+
+A scheduled GitHub Actions workflow still attempts to download and refresh the
+official gzip Sitemap. Shopify currently returns HTTP 400 to GitHub-hosted
+runners. When that happens, the workflow verifies that the existing mirror is
+present, retains it, and emits a warning instead of deleting or replacing it.
+The workflow does not receive application secrets, model keys, database
+credentials, or translated content.
 
 ## Operational Behavior
 
 - Official Shopify discovery remains preferred whenever its CDN route works.
-- The mirror is refreshed daily and can also be refreshed manually.
-- A stale mirror can delay discovery of new pages by at most the mirror refresh
-  interval, while the separate daily refresh of already known pages continues.
+- The workflow attempts a mirror refresh daily. A successful official download
+  replaces the branch; a blocked download retains the last validated mirror.
+- Already discovered pages are still refreshed daily by the ingestion worker.
+  New Shopify pages are not discovered until the mirror is refreshed from a
+  network path that can download the official gzip file.
 - The server needs outbound HTTPS access to Shopify.dev and
   `raw.githubusercontent.com`; no inbound port change is required.

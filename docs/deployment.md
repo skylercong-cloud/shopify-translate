@@ -53,24 +53,30 @@ corepack pnpm deploy:preflight
 ## Sitemap Mirror Bootstrap
 
 The ingestion worker always tries the official Shopify Sitemap first. When that
-CDN route fails, `SOURCE_SITEMAP_MIRROR_URL` supplies a daily decompressed copy
-from the repository's `sitemap-cache` branch.
+CDN route fails, `SOURCE_SITEMAP_MIRROR_URL` supplies the last validated,
+decompressed copy from the repository's `sitemap-cache` branch.
 
 Before relying on the fallback for the first time:
 
-1. Open the repository's **Actions** page and select **Sync Shopify Sitemap mirror**.
-2. Choose **Run workflow** on `main` and wait for the job to finish.
-3. Confirm that the `sitemap-cache` branch contains `shopify-sitemap.xml` and
-   `metadata.json`.
-4. Keep this production value in `.env.production`:
+1. Confirm that the `sitemap-cache` branch contains `shopify-sitemap.xml` and
+   `metadata.json`. The metadata `urlCount` records the validated docs URL count.
+2. Keep this production value in `.env.production`:
 
    ```dotenv
    SOURCE_SITEMAP_MIRROR_URL=https://raw.githubusercontent.com/skylercong-cloud/shopify-translate/sitemap-cache/shopify-sitemap.xml
    ```
 
-If the workflow cannot push, set repository **Actions > General > Workflow
-permissions** to **Read and write permissions**, then run it again. The workflow
-contains only public source URLs and does not use application or model secrets.
+The **Sync Shopify Sitemap mirror** workflow attempts an official refresh every
+day. Shopify currently returns HTTP 400 to GitHub-hosted runners; in that case
+the workflow validates and retains the existing branch and reports a warning.
+Already discovered pages still receive the application's normal daily content
+checks. Newly added Shopify pages require a later mirror refresh from a network
+that can download the official gzip Sitemap.
+
+If a future successful workflow cannot push, set repository **Actions > General
+> Workflow permissions** to **Read and write permissions**, then run it again.
+The workflow contains only public source URLs and does not use application or
+model secrets.
 
 ## First Deployment
 

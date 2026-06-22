@@ -129,6 +129,11 @@ describe("production packaging", () => {
     expect(workflow).toContain("shopify-sitemap.xml");
     expect(workflow).toContain("$RUNNER_TEMP");
     expect(workflow).not.toContain("${{ runner.temp }}");
+    expect(workflow).toContain("uses: actions/checkout@v5");
+    expect(workflow).toContain("id: download");
+    expect(workflow).toContain("continue-on-error: true");
+    expect(workflow).toContain("steps.download.outcome == 'failure'");
+    expect(workflow).toContain("git fetch --depth=1 origin sitemap-cache");
     expect(workflow).not.toContain("DATABASE_URL");
     expect(workflow).not.toContain("MODEL_KEY_ENCRYPTION_KEY");
   });
