@@ -16,10 +16,6 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      SITEMAP_GZIP: ${{ runner.temp }}/sitemap_standard.xml.gz
-      SITEMAP_XML: ${{ runner.temp }}/shopify-sitemap.xml
-      MIRROR_DIR: ${{ runner.temp }}/sitemap-cache
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -28,6 +24,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          SITEMAP_GZIP="$RUNNER_TEMP/sitemap_standard.xml.gz"
+          SITEMAP_XML="$RUNNER_TEMP/shopify-sitemap.xml"
           curl --fail --silent --show-error --location \
             --retry 4 --retry-all-errors --connect-timeout 20 --max-time 180 \
             --header 'Accept: application/gzip, application/x-gzip, */*;q=0.1' \
@@ -41,6 +39,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          SITEMAP_XML="$RUNNER_TEMP/shopify-sitemap.xml"
+          MIRROR_DIR="$RUNNER_TEMP/sitemap-cache"
+          export SITEMAP_XML MIRROR_DIR
           mkdir -p "$MIRROR_DIR"
           python - <<'PY'
           import hashlib
@@ -114,6 +115,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          MIRROR_DIR="$RUNNER_TEMP/sitemap-cache"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git switch --orphan sitemap-cache-publish

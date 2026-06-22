@@ -127,6 +127,8 @@ describe("production packaging", () => {
     expect(workflow).toContain("https://shopify.dev/sitemap_standard.xml.gz");
     expect(workflow).toContain("sitemap-cache");
     expect(workflow).toContain("shopify-sitemap.xml");
+    expect(workflow).toContain("$RUNNER_TEMP");
+    expect(workflow).not.toContain("${{ runner.temp }}");
     expect(workflow).not.toContain("DATABASE_URL");
     expect(workflow).not.toContain("MODEL_KEY_ENCRYPTION_KEY");
   });
