@@ -189,6 +189,7 @@ describe("ingestion schema", () => {
       fetchedAt,
       etag: '"one"',
       lastModified: "Fri, 12 Jun 2026 00:00:00 GMT",
+      translationPriority: 100,
     };
 
     await expect(repository.publishParsedPage(input)).resolves.toMatchObject({
@@ -232,6 +233,7 @@ describe("ingestion schema", () => {
     expect(versionCount.value).toBe(1);
     expect(storedBlocks).toHaveLength(2);
     expect(translationJobs).toHaveLength(2);
+    expect(translationJobs.every((job) => job.priority === 100)).toBe(true);
     expect(translationStates).toHaveLength(2);
     expect(
       translationStates.every((state) => state.status === "pending"),

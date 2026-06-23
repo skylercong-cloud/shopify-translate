@@ -5,6 +5,7 @@ import { createReaderRepository } from "@/db/repositories/reader-repository";
 import { SHOPIFY_DEV_ORIGIN } from "@/modules/ingestion/constants";
 import { createIngestionService } from "@/modules/ingestion/ingestion-service";
 import { createSourceClient } from "@/modules/ingestion/source-client";
+import { requestReaderTranslations } from "@/modules/reader/request-translations";
 
 import { ReaderDocument } from "./reader-document";
 
@@ -112,6 +113,12 @@ export default async function ReaderPage({ params }: ReaderRouteProps) {
     const request = await requestMissingPage(path);
     return <MissingReaderDocument path={path} request={request} />;
   }
+
+  await requestReaderTranslations({
+    page,
+    jobRepository: createJobRepository(db),
+    now: new Date(),
+  });
 
   return <ReaderDocument page={page} />;
 }

@@ -77,20 +77,22 @@ corepack pnpm dev
 - 采集范围为 `https://shopify.dev/docs` 和 `/docs/**`，包括 `/docs/api/**`，不包括 Changelog。
 - Worker 每日刷新 Robots、Sitemap 和已收录页面，仅在内容变化时创建新版本和待翻译任务。
 - 页面优先请求 Shopify.dev 的 `.txt` 表示；不可用时回退到 HTML。
+- `.txt` 文档中的 YAML front matter 只用于来源元数据，不会进入标题、正文或翻译队列。
 - 翻译由后台 worker 按需处理并写入 PostgreSQL；用户访问页面时读取数据库，不实时调用 AI。
+- 直接访问页面会把该页的抓取任务及其待翻译内容块提升到高优先级；未访问页面继续按低优先级和每日 Token 预算逐步覆盖。
 - 自动化测试全部使用本地 Fixture HTTP 服务，不会抓取公开 Shopify.dev。
 
 ## 阅读界面
 
 - 登录后访问本地 `/docs/**` 路由，例如 `/docs/apps/build`，即可打开对应 Shopify.dev 文档的专注阅读页。
+- 左侧保持窄导航栏；点击“目录”后按需展开 Sitemap 已发现的完整 `/docs/**` 路径树，未缓存页面也可以从目录进入并触发按需采集。
 - 页面从 PostgreSQL 读取已采集的英文 source blocks 和当前翻译 revision；访问阅读页不会实时调用 AI。
 - 默认显示中文翻译。点击 `English` 可在同一 URL 下切换英文原文，点击 `中文` 可切回中文；切换不会改变文档 URL。
-- 代码块始终显示 Shopify 源内容，不参与中文改写；页面顶部提供官方来源链接、翻译数量和翻译状态提示。
-- 每个可翻译文本块会显示 Block ID 和人工修正表单；提交后会发布不可变的 manual correction revision。
-- 每个已有译文历史的文本块都可以展开 `Translation history`，查看当前译文、AI 译文、人工修正、provider/model 和发布时间。
+- 标题、段落、列表、表格、提示块、图片和代码块按语义结构渲染；代码块始终保持 Shopify 源内容。
+- 页面顶部提供官方来源、同步时间、翻译数量、中英文切换和“管理译文”入口；Block ID、人工修正表单和修订元数据不会铺在阅读正文中。
 - 登录后访问 `/admin/review` 可进入翻译审核工作台，并排查看英文原文与当前中文译文，直接提交 block 或 global scope 的人工修正。
 - 登录后访问 `/admin/glossary` 可查看术语库快照版本、完整 terms，以及旧版本相对 active 版本新增/移除的术语差异。
-- 未缓存的 `/docs/**` 页面会自动创建高优先级采集任务。后台 worker 拉取内容并为新块排队翻译后，刷新该路径即可读取缓存结果。
+- 未缓存的 `/docs/**` 页面会自动创建高优先级采集任务，并让新内容块继承高翻译优先级；刷新该路径即可读取已缓存结果。
 
 ## 统一搜索
 

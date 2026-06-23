@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { requireCurrentUser } from "@/modules/auth/current-user";
+
+import { ReaderNavigation } from "./reader-navigation";
 
 export default async function AppLayout({
   children,
@@ -12,24 +14,21 @@ export default async function AppLayout({
 
   return (
     <div className="app-shell">
-      <nav className="collapsed-nav" aria-label="文档导航">
-        <span aria-hidden="true">S</span>
-        <Link href="/" aria-label="阅读首页">
-          R
-        </Link>
-        <Link href="/admin" aria-label="运维概览">
-          O
-        </Link>
-        <Link href="/admin/review" aria-label="Translation review">
-          V
-        </Link>
-        <Link href="/admin/glossary" aria-label="Glossary versions">
-          G
-        </Link>
-      </nav>
+      <ReaderNavigation />
       <div className="app-main">
         <header className="app-header">
-          <strong>Shopify 中文文档</strong>
+          <Link className="app-header__brand" href="/">
+            Shopify 中文文档
+          </Link>
+          <form action="/search" className="app-header__search">
+            <label className="sr-only" htmlFor="header-search">搜索文档</label>
+            <input
+              id="header-search"
+              name="q"
+              placeholder="搜索文档或 API identifier"
+              type="search"
+            />
+          </form>
           <div className="app-header__account">
             <span>{user.username}</span>
             <form action="/api/auth/logout" method="post">

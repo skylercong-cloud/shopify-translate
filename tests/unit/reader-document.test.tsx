@@ -13,38 +13,24 @@ const page = {
   version: {
     id: "version-id",
     versionNumber: 1,
-    blockCount: 3,
+    blockCount: 2,
     fetchedAt: new Date("2026-06-18T08:00:00.000Z"),
     publishedAt: new Date("2026-06-18T08:00:00.000Z"),
   },
   summary: {
-    blockCount: 3,
+    blockCount: 2,
     translatedCount: 1,
-    pendingCount: 1,
+    pendingCount: 0,
     reviewRequiredCount: 0,
     failedCount: 0,
     oversizedCount: 0,
   },
   blocks: [
     {
-      id: "heading-id",
-      ordinal: 0,
-      type: "heading",
-      headingPath: ["Build apps"],
-      sourceText: "Build apps",
-      payload: {},
-      translatable: true,
-      fingerprint: "heading-fingerprint",
-      translationStatus: "pending",
-      translatedText: null,
-      currentRevisionSource: null,
-      revisionHistory: [],
-    },
-    {
       id: "paragraph-id",
-      ordinal: 1,
+      ordinal: 0,
       type: "paragraph",
-      headingPath: ["Build apps"],
+      headingPath: [],
       sourceText: "Use Shopify CLI.",
       payload: {},
       translatable: true,
@@ -66,26 +52,13 @@ const page = {
           createdAt: new Date("2026-06-18T08:05:00.000Z"),
           current: true,
         },
-        {
-          id: "ai-revision-id",
-          source: "ai",
-          translatedText: "用 Shopify CLI。",
-          provider: "deepseek",
-          modelId: "deepseek-chat",
-          promptVersionId: "prompt-id",
-          glossaryVersionId: "glossary-id",
-          modelCallId: "model-call-id",
-          sourceFingerprint: "paragraph-fingerprint",
-          createdAt: new Date("2026-06-18T08:01:00.000Z"),
-          current: false,
-        },
       ],
     },
     {
       id: "code-id",
-      ordinal: 2,
+      ordinal: 1,
       type: "code",
-      headingPath: ["Build apps"],
+      headingPath: [],
       sourceText: "shopify app dev",
       payload: { language: "sh" },
       translatable: false,
@@ -99,17 +72,16 @@ const page = {
 } as ReaderPage;
 
 describe("ReaderDocument", () => {
-  it("renders immutable translation revision history for translatable blocks", () => {
+  it("keeps correction forms and revision history in admin", () => {
     render(<ReaderDocument page={page} />);
 
-    expect(screen.getByText("Translation history (2)")).toBeInTheDocument();
-    expect(screen.getByText("Current")).toBeInTheDocument();
-    expect(screen.getByText("Block manual correction")).toBeInTheDocument();
-    expect(screen.getByText("AI translation")).toBeInTheDocument();
-    expect(screen.getByText("deepseek / deepseek-chat")).toBeInTheDocument();
-    expect(screen.getAllByText("使用 Shopify CLI。").length).toBeGreaterThan(1);
-    expect(screen.getByText("用 Shopify CLI。")).toBeInTheDocument();
-    expect(screen.getByText("Jun 18, 2026, 4:05 PM")).toBeInTheDocument();
+    expect(screen.queryByText("Translation history (1)"))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("form")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "管理译文" })).toHaveAttribute(
+      "href",
+      "/admin/review",
+    );
     expect(screen.getByText("shopify app dev")).toBeInTheDocument();
   });
 });

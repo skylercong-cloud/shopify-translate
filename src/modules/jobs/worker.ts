@@ -14,7 +14,11 @@ type JobRepository = Pick<
 type IngestionService = {
   refreshRobotsPolicy(): Promise<unknown>;
   discoverPages(): Promise<unknown>;
-  ingestPage(url: string, jobId: string): Promise<unknown>;
+  ingestPage(
+    url: string,
+    jobId: string,
+    translationPriority: number,
+  ): Promise<unknown>;
   cleanupExpiredPayloads(): Promise<number>;
 };
 
@@ -113,6 +117,7 @@ export function createIngestionWorker(deps: {
           await deps.ingestionService.ingestPage(
             requirePayloadUrl(job),
             job.id,
+            job.priority >= 100 ? job.priority : 0,
           );
           return { outcome: "completed" };
         }

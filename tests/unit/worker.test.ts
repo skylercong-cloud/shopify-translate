@@ -52,6 +52,31 @@ function createDependencies(job: ClaimedJob) {
 }
 
 describe("ingestion worker", () => {
+  it("passes an on-demand fetch priority into page ingestion", async () => {
+    const now = new Date("2026-06-12T00:00:00Z");
+    const job = claimedJob("fetch_page", {
+      url: "https://shopify.dev/docs/api/admin-graphql",
+    });
+    job.priority = 100;
+    const deps = createDependencies(job);
+    const worker = createIngestionWorker({
+      ...deps,
+      workerId: "worker-test",
+      leaseMs: 120_000,
+      pollIntervalMs: 1_000,
+      now: () => now,
+      sleep: async () => undefined,
+      jitter: () => 0,
+    });
+
+    await expect(worker.runOnce()).resolves.toBe("worked");
+    expect(deps.ingestionService.ingestPage).toHaveBeenCalledWith(
+      "https://shopify.dev/docs/api/admin-graphql",
+      job.id,
+      100,
+    );
+  });
+
   it("dispatches discovery and completes the owned job", async () => {
     const now = new Date("2026-06-12T00:00:00Z");
     const deps = createDependencies(claimedJob("discover_sitemap"));

@@ -295,6 +295,7 @@ export function createIngestionRepository(
       fetchedAt: Date;
       etag?: string;
       lastModified?: string;
+      translationPriority?: number;
     }): Promise<
       | { kind: "published"; versionId: string; versionNumber: number }
       | { kind: "unchanged"; versionId: string }
@@ -596,7 +597,7 @@ export function createIngestionRepository(
                 blockId: block.id,
                 contentFingerprint: block.fingerprint,
               },
-              priority: 0,
+              priority: input.translationPriority ?? 0,
               runAt: input.fetchedAt,
             };
           });

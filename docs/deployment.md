@@ -164,6 +164,24 @@ docker compose --env-file .env.production -f compose.production.yaml exec web co
 docker compose --env-file .env.production -f compose.production.yaml ps
 ```
 
+### One-time refresh for pre-front-matter caches
+
+Releases before the Shopify Markdown front matter parser fix may have stored
+`title:` and `description:` metadata as page content. After deploying the fixed
+release, clear only the source cache validators and wake the next discovery job:
+
+```bash
+docker compose --env-file .env.production -f compose.production.yaml exec db \
+  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "update source_pages set etag = null, last_modified = null, last_checked_at = null, updated_at = now();"'
+
+docker compose --env-file .env.production -f compose.production.yaml exec db \
+  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "update jobs set run_at = now(), updated_at = now() where type = '\''discover_sitemap'\'' and status = '\''queued'\'';"'
+```
+
+The discovery worker will enqueue normal low-priority page refreshes. Existing
+valid translations are reused by content fingerprint; only changed blocks enter
+the translation queue. Do not delete source pages, versions, or translations.
+
 If a migration is included, create a manual backup before the upgrade:
 
 ```bash

@@ -281,6 +281,7 @@ export function createIngestionService(deps: {
     async ingestPage(
       url: string,
       jobId: string,
+      translationPriority = 0,
     ): Promise<IngestPageResult> {
       const canonicalUrl = canonicalizeShopifyDocsUrl(url);
       const page = await ensurePage(canonicalUrl);
@@ -388,6 +389,7 @@ export function createIngestionService(deps: {
         fetchedAt: deps.now(),
         etag: fetched.etag,
         lastModified: fetched.lastModified,
+        translationPriority,
       });
     },
 

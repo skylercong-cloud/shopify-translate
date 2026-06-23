@@ -5,6 +5,33 @@ import { describe, expect, it } from "vitest";
 import { parseSourcePage } from "@/modules/ingestion/parser";
 
 describe("structured page parser", () => {
+  it("ignores Shopify YAML front matter when parsing Markdown", () => {
+    const page = parseSourcePage({
+      sourceFormat: "text",
+      body: `---
+title: GraphQL Admin API reference
+description: >-
+  The Admin API lets you build apps and integrations that extend and enhance the
+  Shopify admin.
+api_version: 2026-04
+source_url:
+  html: 'https://shopify.dev/docs/api/admin-graphql/latest'
+  md: 'https://shopify.dev/docs/api/admin-graphql/latest.md'
+---
+
+# GraphQL Admin API reference
+
+The Admin API lets you build apps and integrations.
+`,
+    });
+
+    expect(page.title).toBe("GraphQL Admin API reference");
+    expect(page.blocks.map((block) => block.sourceText)).toEqual([
+      "GraphQL Admin API reference",
+      "The Admin API lets you build apps and integrations.",
+    ]);
+  });
+
   it.each([
     ["text", "tests/fixtures/ingestion/page.md"],
     ["html", "tests/fixtures/ingestion/page.html"],

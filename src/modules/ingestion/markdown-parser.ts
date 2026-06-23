@@ -1,4 +1,5 @@
 import { unified } from "unified";
+import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 
@@ -128,6 +129,7 @@ export function parseMarkdownBlocks(
 ): ParsedBlock[] {
   const tree = unified()
     .use(remarkParse)
+    .use(remarkFrontmatter, ["yaml"])
     .use(remarkGfm)
     .parse(body) as MarkdownNode;
   const blocks: ParsedBlock[] = [];
