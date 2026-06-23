@@ -61,9 +61,13 @@ function validateParserTokens(
 ): ProtectedSpan[] {
   const spans = parserTokens
     .map((token) => ({ start: token.start, end: token.end }))
-    .sort((left, right) => left.start - right.start);
+    .sort(
+      (left, right) =>
+        left.start - right.start || right.end - left.end,
+    );
+  const normalized: ProtectedSpan[] = [];
 
-  for (const [index, span] of spans.entries()) {
+  for (const span of spans) {
     if (
       !Number.isInteger(span.start) ||
       !Number.isInteger(span.end) ||
@@ -73,12 +77,15 @@ function validateParserTokens(
     ) {
       throw new Error("Invalid parser token offsets");
     }
-    if (index > 0 && span.start < spans[index - 1].end) {
+    const previous = normalized.at(-1);
+    if (previous && span.start < previous.end) {
+      if (span.end <= previous.end) continue;
       throw new Error("Parser token offsets overlap");
     }
+    normalized.push(span);
   }
 
-  return spans;
+  return normalized;
 }
 
 function literalPlaceholderSpans(

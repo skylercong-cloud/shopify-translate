@@ -153,6 +153,40 @@ describe("translation input protection", () => {
     ).toThrow("overlap");
   });
 
+  it("collapses nested parser offsets into one protected span", () => {
+    const sourceText = "Read productCreate mutation.";
+    const outerStart = sourceText.indexOf("productCreate mutation");
+    const innerStart = sourceText.indexOf("productCreate");
+    const result = protectTranslationInput({
+      sourceText,
+      blockKind: "paragraph",
+      parserTokens: [
+        {
+          kind: "identifier",
+          value: "productCreate",
+          start: innerStart,
+          end: innerStart + "productCreate".length,
+        },
+        {
+          kind: "url",
+          value: "https://shopify.dev/docs/api/productCreate",
+          start: outerStart,
+          end: outerStart + "productCreate mutation".length,
+        },
+      ],
+      glossaryTerms: [],
+    });
+
+    if ("translatable" in result) throw new Error("Expected protection");
+    expect(result.placeholders).toHaveLength(1);
+    expect(result.placeholders[0].sourceValue).toBe(
+      "productCreate mutation",
+    );
+    expect(
+      result.restore(`Read ${result.placeholders[0].placeholder}.`),
+    ).toBe(sourceText);
+  });
+
   it.each([
     ["placeholder_missing", "使用 ⟦P0001⟧。"],
     [
