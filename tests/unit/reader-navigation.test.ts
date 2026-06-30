@@ -8,6 +8,8 @@ import {
 const entries = [
   { path: "/docs/apps", title: "Build apps" },
   { path: "/docs/apps/build", title: "App development" },
+  { path: "/docs/storefronts", title: "Build storefronts" },
+  { path: "/docs/storefronts/themes", title: "Themes" },
   {
     path: "/docs/api/admin-graphql",
     title: "GraphQL Admin API reference",
@@ -26,15 +28,27 @@ describe("reader navigation", () => {
   it("builds stable immediate children without rendering the full corpus", () => {
     expect(buildNavigationChildren(entries, "/docs")).toEqual([
       {
-        path: "/docs/api",
-        label: "API",
-        isPage: false,
+        path: "/docs/apps",
+        label: "Apps",
+        isPage: true,
         hasChildren: true,
       },
       {
-        path: "/docs/apps",
-        label: "Build apps",
+        path: "/docs/storefronts",
+        label: "Storefronts",
         isPage: true,
+        hasChildren: true,
+      },
+      {
+        path: "/docs/agents",
+        label: "Agents",
+        isPage: true,
+        hasChildren: false,
+      },
+      {
+        path: "/docs/api",
+        label: "References",
+        isPage: false,
         hasChildren: true,
       },
     ]);

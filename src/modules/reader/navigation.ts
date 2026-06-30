@@ -18,6 +18,13 @@ const SEGMENT_LABELS: Record<string, string> = {
   ui: "UI",
 };
 
+const CURATED_ROOT = [
+  { path: "/docs/apps", label: "Apps", isPage: true },
+  { path: "/docs/storefronts", label: "Storefronts", isPage: true },
+  { path: "/docs/agents", label: "Agents", isPage: true },
+  { path: "/docs/api", label: "References", isPage: false },
+] as const;
+
 function labelForSegment(segment: string): string {
   return segment
     .split("-")
@@ -76,6 +83,13 @@ export function buildNavigationChildren(
     if (rest.length === 0) current.exact = entry;
     else current.hasChildren = true;
     grouped.set(path, current);
+  }
+
+  if (normalizedParent === "/docs") {
+    return CURATED_ROOT.map((node) => ({
+      ...node,
+      hasChildren: grouped.get(node.path)?.hasChildren ?? false,
+    }));
   }
 
   return [...grouped.entries()]
